@@ -1,28 +1,28 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
 
 const props = defineProps({
     categories: Array
 });
 
 const form = useForm({
+    id: null,
     name: ''
 });
 
-const editingCategory = ref(null);
-
 const editCategory = (category) => {
-    editingCategory.value = { ...category };
+    form.errors = []
+    form.id = category.id
+    form.name = category.name
 };
 
 const saveCategory = () => {
-    if (editingCategory.value.id) {
-        form.put(route('categories.update', editingCategory.value.id), {
+    form.errors = []
+    if (form.id) {
+        form.put(route('categories.update', form.id), {
             onSuccess: () => {
-                editingCategory.value = null;
-                form.reset();
+                form.reset()
             }
         });
     } else {
@@ -33,8 +33,9 @@ const saveCategory = () => {
 };
 
 const deleteCategory = (category) => {
+    form.reset()
     if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-        form.delete(route('categories.destroy', category.id));
+        form.delete(route('categories.destroy', category.id))
     }
 };
 </script>
@@ -59,30 +60,28 @@ const deleteCategory = (category) => {
                             <div class="md:col-span-3">
                                 <label class="block mb-2 text-sm font-medium text-gray-700">Nome da Categoria</label>
                                 <input
-                                    v-if="editingCategory"
-                                    v-model="editingCategory.name"
-                                    type="text"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
-                                <input
-                                    v-else
                                     v-model="form.name"
                                     type="text"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
+                                    :class="[
+                                        'w-full p-2 border rounded-md',
+                                        form.errors.name ? 'border-red-500' : 'border-gray-300'
+                                    ]"
                                     required
                                 >
+                                <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
+                                    {{ form.errors.name }}
+                                </p>
                             </div>
                             <div class="flex items-end">
                                 <button
                                     type="submit"
                                     class="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
                                 >
-                                    {{ editingCategory ? 'Atualizar' : 'Adicionar' }}
+                                    {{ form.id ? 'Atualizar' : 'Adicionar' }}
                                 </button>
                                 <button
-                                    v-if="editingCategory"
-                                    @click="editingCategory = null; form.reset()"
+                                    v-if="form.id"
+                                    @click="form.reset(); form.errors = []"
                                     type="button"
                                     class="w-full px-4 py-2 ml-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
                                 >

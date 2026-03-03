@@ -2,20 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\Repositories\CategoryRepository;
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Categories\CategoryRequest;
 use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
+
+    public function __construct(
+        private readonly CategoryRepository $categoryRepository
+    )
+    {}
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $categories = Auth::user()->categories()->orderBy('name')->get();
+        $categories = $this->categoryRepository->all();
+
         return Inertia::render('Categories/Index', [
             'categories' => $categories
         ]);
@@ -24,51 +30,44 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CategoryRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        try {
+            $this->categoryRepository->store($request);
+            return redirect()->back();
 
-        Auth::user()->categories()->create([
-            'name' => $request->name
-        ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
+        }
 
-        return redirect()->back();
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Category $category)
+    public function update(CategoryRequest $request, $categoryId)
     {
-        // Verificar se o usuário é dono da categoria
-        if (Auth::id() !== $category->user_id) {
-            abort(403);
+        try {
+            $category = $this->categoryRepository->findById($categoryId);
+            $this->categoryRepository->update($category, $request);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
         }
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $category->update([
-            'name' => $request->name
-        ]);
-
-        return redirect()->back();
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category $category)
+    public function destroy($categoryId)
     {
-        // Verificar se o usuário é dono da categoria
-        if (Auth::id() !== $category->user_id) {
-            abort(403);
+        try {
+            $category = $this->categoryRepository->findById($categoryId);
+            $this->categoryRepository->delete($category);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
         }
-
-        $category->delete();
-        return redirect()->back();
     }
 }

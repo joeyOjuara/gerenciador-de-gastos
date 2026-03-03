@@ -25,8 +25,7 @@ class DashboardController extends Controller
             ->sum('amount');
 
         // Gastos por categoria no mês atual
-        $categoriesData = $user->categories()
-            ->withSum(['transactions' => function ($query) use ($now) {
+        $categoriesData = Category::withSum(['transactions' => function ($query) use ($now) {
                 $query->whereMonth('date', $now->month)
                     ->whereYear('date', $now->year);
             }], 'amount')
