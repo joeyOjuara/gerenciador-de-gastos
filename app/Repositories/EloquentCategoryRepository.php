@@ -2,7 +2,7 @@
 
 namespace App\Repositories;
 
-use App\Contracts\Repositories\CategoryRepository;
+use App\Contracts\CategoryRepository;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,5 +32,10 @@ class EloquentCategoryRepository implements CategoryRepository {
     public function update(Category $category, Request $request) : void
     {
         $category->update($request->all());
+    }
+
+    public function orderBy(string $coluna): Collection
+    {
+        return Category::orderBy($coluna)->get();
     }
 }

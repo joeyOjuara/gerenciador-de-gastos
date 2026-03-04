@@ -23,6 +23,7 @@ const saveCategory = () => {
         form.put(route('categories.update', form.id), {
             onSuccess: () => {
                 form.reset()
+                form.errors = []
             }
         });
     } else {
@@ -34,6 +35,7 @@ const saveCategory = () => {
 
 const deleteCategory = (category) => {
     form.reset()
+    form.errors = []
     if (confirm('Tem certeza que deseja excluir esta categoria?')) {
         form.delete(route('categories.destroy', category.id))
     }

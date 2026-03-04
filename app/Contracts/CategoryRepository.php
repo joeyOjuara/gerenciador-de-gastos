@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Contracts\Repositories;
+namespace App\Contracts;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -12,4 +12,5 @@ interface CategoryRepository {
     public function delete(Category $category) : void;
     public function findById(int $categoryId) : Category;
     public function update(Category $category, Request $request) : void;
+    public function orderBy(string $coluna) : Collection;
 }

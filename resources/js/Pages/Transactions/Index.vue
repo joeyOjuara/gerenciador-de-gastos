@@ -1,7 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useCurrencyInput } from 'vue-currency-input';
 
 const props = defineProps({
     transactions: Array,
@@ -9,34 +10,59 @@ const props = defineProps({
 });
 
 const form = useForm({
+    id: null,
     description: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     category_id: ''
 });
 
-const editingTransaction = ref(null);
+const { inputRef, numberValue, setValue} = useCurrencyInput({
+    locale: 'pt-BR',
+    currency: 'BRL',
+    precision: 2
+})
+
+watch(numberValue, (value) => {
+    form.amount = value
+})
 
 const editTransaction = (transaction) => {
-    editingTransaction.value = { ...transaction };
-};
+    console.log(transaction.amount)
+    form.errors = []
+    form.id = transaction.id
+    form.description = transaction.description
+    form.date = transaction.date
+    form.category_id = transaction.category_id
+
+    console.log(numberValue.value)
+    setValue(Number(transaction.amount))
+}
 
 const saveTransaction = () => {
-    if (editingTransaction.value.id) {
-        form.put(route('transactions.update', editingTransaction.value.id), {
+    form.errors = []
+    if (form.id) {
+        form.put(route('transactions.update', form.id), {
             onSuccess: () => {
-                editingTransaction.value = null;
-                form.reset();
+                form.reset()
+                form.errors = []
+                setValue(null)
             }
         });
     } else {
         form.post(route('transactions.store'), {
-            onSuccess: () => form.reset()
+            onSuccess: () => {
+                form.reset()
+                form.errors = []
+                setValue(null)
+            }
         });
     }
 };
 
 const deleteTransaction = (transaction) => {
+    form.reset()
+    form.errors = []
     if (confirm('Tem certeza que deseja excluir esta transação?')) {
         form.delete(route('transactions.destroy', transaction.id));
     }
@@ -64,76 +90,49 @@ const deleteTransaction = (transaction) => {
                             <div class="md:col-span-3">
                                 <label class="block mb-2 text-sm font-medium text-gray-700">Descrição</label>
                                 <input
-                                    v-if="editingTransaction"
-                                    v-model="editingTransaction.description"
-                                    type="text"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
-                                <input
-                                    v-else
                                     v-model="form.description"
                                     type="text"
                                     class="w-full p-2 border border-gray-300 rounded-md"
                                     required
                                 >
+                                <p v-if="form.errors.description" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
+                                    {{ form.errors.description }}
+                                </p>
                             </div>
 
                             <!-- Valor -->
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-700">Valor (R$)</label>
                                 <input
-                                    v-if="editingTransaction"
-                                    v-model="editingTransaction.amount"
-                                    type="number"
+                                    ref="inputRef"
+                                    type="text"
                                     step="0.01"
                                     class="w-full p-2 border border-gray-300 rounded-md"
                                     required
                                 >
-                                <input
-                                    v-else
-                                    v-model="form.amount"
-                                    type="number"
-                                    step="0.01"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
+                                <p v-if="form.errors.amount" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
+                                    {{ form.errors.amount }}
+                                </p>
                             </div>
 
                             <!-- Data -->
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-700">Data</label>
                                 <input
-                                    v-if="editingTransaction"
-                                    v-model="editingTransaction.date"
-                                    type="date"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
-                                <input
-                                    v-else
                                     v-model="form.date"
                                     type="date"
                                     class="w-full p-2 border border-gray-300 rounded-md"
                                     required
                                 >
+                                <p v-if="form.errors.date" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
+                                    {{ form.errors.date }}
+                                </p>
                             </div>
 
                             <!-- Categoria -->
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-700">Categoria</label>
                                 <select
-                                    v-if="editingTransaction"
-                                    v-model="editingTransaction.category_id"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                    required
-                                >
-                                    <option v-for="category in categories" :key="category.id" :value="category.id">
-                                        {{ category.name }}
-                                    </option>
-                                </select>
-                                <select
-                                    v-else
                                     v-model="form.category_id"
                                     class="w-full p-2 border border-gray-300 rounded-md"
                                     required
@@ -142,6 +141,9 @@ const deleteTransaction = (transaction) => {
                                         {{ category.name }}
                                     </option>
                                 </select>
+                                <p v-if="form.errors.category_id" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
+                                    {{ form.errors.category_id }}
+                                </p>
                             </div>
 
                             <!-- Botões -->
@@ -150,11 +152,11 @@ const deleteTransaction = (transaction) => {
                                     type="submit"
                                     class="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
                                 >
-                                    {{ editingTransaction ? 'Atualizar' : 'Adicionar' }}
+                                    {{ form.id ? 'Atualizar' : 'Adicionar' }}
                                 </button>
                                 <button
-                                    v-if="editingTransaction"
-                                    @click="editingTransaction = null; form.reset()"
+                                    v-if="form.id"
+                                    @click="form.reset(); form.errors = []; setValue(null)"
                                     type="button"
                                     class="w-full px-4 py-2 ml-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
                                 >
@@ -181,7 +183,7 @@ const deleteTransaction = (transaction) => {
                                     <td class="px-6 py-4 whitespace-nowrap">{{ transaction.description }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ transaction.category.name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">R$ {{ parseFloat(transaction.amount).toFixed(2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ new Date(transaction.date).toLocaleDateString() }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ transaction.date.split('-').reverse().join('/') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <button
                                             @click="editTransaction(transaction)"

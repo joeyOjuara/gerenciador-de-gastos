@@ -3,14 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Contracts\CategoryRepository;
+use App\Contracts\TransactionRepository;
+use App\Http\Requests\Transactions\TransactionRequest;
 
 class TransactionController extends Controller
 {
+
+    public function __construct(
+        private readonly CategoryRepository $categoryRepository,
+        private readonly TransactionRepository $transactionRepository
+    )
+    {}
+
     /**
      * Display a listing of the resource.
      */
@@ -23,70 +32,55 @@ class TransactionController extends Controller
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
-            'categories' => Auth::user()->categories
+            'categories' => $this->categoryRepository->orderBy('name')
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(TransactionRequest $request)
     {
-        $request->validate([
-            'description' => 'required|string|max:255',
-            'amount' => 'required|numeric',
-            'date' => 'required|date',
-            'category_id' => 'required|exists:categories,id'
-        ]);
 
-        Auth::user()->transactions()->create([
-            'description' => $request->description,
-            'amount' => $request->amount,
-            'date' => $request->date,
-            'category_id' => $request->category_id
-        ]);
+        try {
+            $request->merge([
+                'user_id' => Auth::user()->id
+            ]);
 
-        return redirect()->back();
+            $this->transactionRepository->store($request);
+            return redirect()->back();
+
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Transaction $transaction)
+    public function update(TransactionRequest $request, $transactionId)
     {
-        // Verificar se o usuário é dono da transação
-        if (Auth::id() !== $transaction->user_id) {
-            abort(403);
+        try {
+            $transaction = $this->transactionRepository->findById($transactionId);
+            $this->transactionRepository->update($transaction, $request);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
         }
 
-        $request->validate([
-            'description' => 'required|string|max:255',
-            'amount' => 'required|numeric',
-            'date' => 'required|date',
-            'category_id' => 'required|exists:categories,id'
-        ]);
-
-        $transaction->update([
-            'description' => $request->description,
-            'amount' => $request->amount,
-            'date' => $request->date,
-            'category_id' => $request->category_id
-        ]);
-
-        return redirect()->back();
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Transaction $transaction)
+    public function destroy($transactionId)
     {
-        // Verificar se o usuário é dono da transação
-        if (Auth::id() !== $transaction->user_id) {
-            abort(403);
+        try {
+            $transaction = $this->transactionRepository->findById($transactionId);
+            $this->transactionRepository->delete($transaction);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
         }
-
-        $transaction->delete();
-        return redirect()->back();
     }
 }

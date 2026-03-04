@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class CategoryRequest extends FormRequest
 {
 
-    private const TAMANHO_MAX = 20;
+    private const TAMANHO_MAX = 40;
 
     /**
      * Determine if the user is authorized to make this request.

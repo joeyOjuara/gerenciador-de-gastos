@@ -26,6 +26,11 @@ Route::middleware(['auth', 'verified'])->prefix('categories')->group(function ()
     Route::put('/update/{id}', [CategoryController::class, 'update'])->name('categories.update');
 });
 
-Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+route::middleware(['auth', 'verified'])->prefix('transactions')->group(function () {
+    Route::get('/', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::post('/store', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::delete('/delete/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
+    Route::put('/update/{id}', [TransactionController::class, 'update'])->name('transactions.update');
+});
 
 require __DIR__ . '/auth.php';

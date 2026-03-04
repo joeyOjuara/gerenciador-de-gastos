@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Contracts\Repositories\CategoryRepository;
+use App\Contracts\CategoryRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Categories\CategoryRequest;
 use Inertia\Inertia;
