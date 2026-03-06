@@ -2,16 +2,15 @@
     import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
     import { Head } from '@inertiajs/vue3';
     import BarChart from '@/Components/BarChart.vue';
+    import DataTable from '@/Components/DataTable.vue';
+    import { tableSchemas } from '@/Objects/tableSchemas';
 
     defineProps({
         categoriesData: {
             type: Object,
             required: true
         },
-        transactions: {
-            type: Array,
-            required: true
-        },
+        transactions: Array,
         totalIncome: {
             type: Number,
             required: true,
@@ -27,6 +26,8 @@
         return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     }
 
+    const columnsTransactions = tableSchemas.transactions
+
 </script>
 
 <template>
@@ -34,7 +35,7 @@
 
     <AuthenticatedLayout>
         <template #header>
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">Dashboard Financeiro</h2>
+            <h2 class="text-xl font-semibold leading-tight text-gray-50">Dashboard Financeiro</h2>
         </template>
 
         <div class="py-12">
@@ -69,55 +70,27 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2">
-                    <!-- Recent Transactions -->
-                    <div class="p-6 bg-white rounded-lg shadow">
-                        <h3 class="mb-4 text-lg font-medium text-gray-800">Últimas Transações</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Descrição</th>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Categoria</th>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Valor</th>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Data</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="transaction in transactions" :key="transaction.id">
-                                <td class="px-6 py-4 whitespace-nowrap">{{ transaction.description }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ transaction.category.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">R$ {{ parseFloat(transaction.amount).toFixed(2) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ new Date(transaction.date).toLocaleDateString() }}</td>
-                                </tr>
-                            </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <!-- Transações Recentes -->
+                    <DataTable
+                        :columns="columnsTransactions"
+                        :rows="transactions"
+                    >
+                        <template #title>
+                            <span class="text-gray-50">Últimas Entradas</span>
+                        </template>
 
-                    <!-- Recent Transactions -->
-                    <div class="p-6 bg-white rounded-lg shadow">
-                        <h3 class="mb-4 text-lg font-medium text-gray-800">Últimas Transações</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Descrição</th>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Categoria</th>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Valor</th>
-                                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Data</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="transaction in transactions" :key="transaction.id">
-                                <td class="px-6 py-4 whitespace-nowrap">{{ transaction.description }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ transaction.category.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">R$ {{ parseFloat(transaction.amount).toFixed(2) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">{{ new Date(transaction.date).toLocaleDateString() }}</td>
-                                </tr>
-                            </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    </DataTable>
+
+                    <!-- Últimas Transações -->
+                    <DataTable
+                        :columns="columnsTransactions"
+                        :rows="transactions"
+                    >
+                        <template #title>
+                            <span class="text-gray-50">Últimas Entradas</span>
+                        </template>
+
+                    </DataTable>
                 </div>
             </div>
         </div>

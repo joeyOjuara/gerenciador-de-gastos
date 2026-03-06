@@ -10,6 +10,7 @@ class RepositoryServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(\App\Contracts\PaymentRepository::class, \App\Repositories\EloquentPaymentRepository::class);
         $this->app->bind(\App\Contracts\TransactionRepository::class, \App\Repositories\EloquentTransactionRepository::class);
         $this->app->bind(CategoryRepository::class, EloquentCategoryRepository::class);
     }

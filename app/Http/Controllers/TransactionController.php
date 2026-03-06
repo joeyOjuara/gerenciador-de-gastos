@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Contracts\CategoryRepository;
+use App\Contracts\PaymentRepository;
 use App\Contracts\TransactionRepository;
 use App\Http\Requests\Transactions\TransactionRequest;
 
@@ -16,7 +15,8 @@ class TransactionController extends Controller
 
     public function __construct(
         private readonly CategoryRepository $categoryRepository,
-        private readonly TransactionRepository $transactionRepository
+        private readonly TransactionRepository $transactionRepository,
+        private readonly PaymentRepository $paymentRepository
     )
     {}
 
@@ -27,12 +27,14 @@ class TransactionController extends Controller
     {
         $transactions = Auth::user()->transactions()
             ->with('category')
+            ->with('payment')
             ->orderBy('date', 'desc')
             ->get();
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
-            'categories' => $this->categoryRepository->orderBy('name')
+            'categories' => $this->categoryRepository->orderBy('name'),
+            'payments' => $this->paymentRepository->orderBy('name')
         ]);
     }
 

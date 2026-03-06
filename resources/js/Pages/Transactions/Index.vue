@@ -1,72 +1,83 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
-import { useCurrencyInput } from 'vue-currency-input';
+    import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+    import { tableSchemas } from '@/Objects/tableSchemas';
+    import { Head, useForm } from '@inertiajs/vue3';
+    import { watch } from 'vue';
+    import { useCurrencyInput } from 'vue-currency-input';
+    import DataTable from '@/Components/DataTable.vue';
 
-const props = defineProps({
-    transactions: Array,
-    categories: Array
-});
+    const props = defineProps({
+        transactions: Array,
+        categories: Array,
+        payments: Array
+    });
 
-const form = useForm({
-    id: null,
-    description: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    category_id: ''
-});
+    const form = useForm({
+        id: null,
+        description: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        category_id: '',
+        payment_id: ''
+    });
 
-const { inputRef, numberValue, setValue} = useCurrencyInput({
-    locale: 'pt-BR',
-    currency: 'BRL',
-    precision: 2
-})
+    const { inputRef, numberValue, setValue} = useCurrencyInput({
+        locale: 'pt-BR',
+        currency: 'BRL',
+        precision: 2
+    })
 
-watch(numberValue, (value) => {
-    form.amount = value
-})
+    watch(numberValue, (value) => {
+        form.amount = value
+    })
 
-const editTransaction = (transaction) => {
-    console.log(transaction.amount)
-    form.errors = []
-    form.id = transaction.id
-    form.description = transaction.description
-    form.date = transaction.date
-    form.category_id = transaction.category_id
+    const editTransaction = (transaction) => {
+        form.errors = []
+        form.id = transaction.id
+        form.description = transaction.description
+        form.date = transaction.date
+        form.category_id = transaction.category_id
+        form.payment_id = transaction.payment_id
 
-    console.log(numberValue.value)
-    setValue(Number(transaction.amount))
-}
-
-const saveTransaction = () => {
-    form.errors = []
-    if (form.id) {
-        form.put(route('transactions.update', form.id), {
-            onSuccess: () => {
-                form.reset()
-                form.errors = []
-                setValue(null)
-            }
-        });
-    } else {
-        form.post(route('transactions.store'), {
-            onSuccess: () => {
-                form.reset()
-                form.errors = []
-                setValue(null)
-            }
-        });
+        setValue(Number(transaction.amount))
     }
-};
 
-const deleteTransaction = (transaction) => {
-    form.reset()
-    form.errors = []
-    if (confirm('Tem certeza que deseja excluir esta transação?')) {
-        form.delete(route('transactions.destroy', transaction.id));
-    }
-};
+    const saveTransaction = () => {
+        form.errors = []
+        if (form.id) {
+            form.put(route('transactions.update', form.id), {
+                onSuccess: () => {
+                    form.reset()
+                    form.errors = []
+                    setValue(null)
+                }
+            });
+        } else {
+            form.post(route('transactions.store'), {
+                onSuccess: () => {
+                    form.reset()
+                    form.errors = []
+                    setValue(null)
+                }
+            });
+        }
+    };
+
+    const deleteTransaction = (transaction) => {
+        form.reset()
+        form.errors = []
+        if (confirm('Tem certeza que deseja excluir esta transação?')) {
+            form.delete(route('transactions.destroy', transaction.id));
+        }
+    };
+
+    const columns = [
+        ...tableSchemas.transactions,
+        {
+            label: "Ações",
+            key: "actions",
+        }
+    ]
 </script>
 
 <template>
@@ -74,20 +85,17 @@ const deleteTransaction = (transaction) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">Transações</h2>
-                <Link :href="route('dashboard')" class="text-blue-600 hover:text-blue-900">Voltar ao Dashboard</Link>
-            </div>
+            <h2 class="text-xl font-semibold leading-tight text-gray-50">Transações</h2>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div class="p-6 bg-white rounded-lg shadow">
+                <div class="p-6 bg-gray rounded-lg shadow">
                     <!-- Formulário -->
                     <form @submit.prevent="saveTransaction" class="mb-8">
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-6">
                             <!-- Descrição -->
-                            <div class="md:col-span-3">
+                            <div class="md:col-span-2">
                                 <label class="block mb-2 text-sm font-medium text-gray-700">Descrição</label>
                                 <input
                                     v-model="form.description"
@@ -146,6 +154,23 @@ const deleteTransaction = (transaction) => {
                                 </p>
                             </div>
 
+                            <!-- Forma de Pagamento -->
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-700">Pagamento</label>
+                                <select
+                                    v-model="form.payment_id"
+                                    class="w-full p-2 border border-gray-300 rounded-md"
+                                    required
+                                >
+                                    <option v-for="payment in payments" :key="payment.id" :value="payment.id">
+                                        {{ payment.name }}
+                                    </option>
+                                </select>
+                                <p v-if="form.errors.payment_id" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
+                                    {{ form.errors.payment_id }}
+                                </p>
+                            </div>
+
                             <!-- Botões -->
                             <div class="flex items-end">
                                 <button
@@ -167,41 +192,27 @@ const deleteTransaction = (transaction) => {
                     </form>
 
                     <!-- Tabela de Transações -->
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Descrição</th>
-                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Categoria</th>
-                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Valor</th>
-                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Data</th>
-                                    <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="transaction in transactions" :key="transaction.id">
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ transaction.description }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ transaction.category.name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">R$ {{ parseFloat(transaction.amount).toFixed(2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ transaction.date.split('-').reverse().join('/') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <button
-                                            @click="editTransaction(transaction)"
-                                            class="mr-2 text-blue-600 hover:text-blue-900"
-                                        >
-                                            Editar
-                                        </button>
-                                        <button
-                                            @click="deleteTransaction(transaction)"
-                                            class="text-red-600 hover:text-red-900"
-                                        >
-                                            Excluir
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        :columns="columns"
+                        :rows="transactions"
+                        :perPage="20"
+                        :search_field="true"
+                    >
+                        <template #actions="{row}">
+                            <button
+                                @click="editTransaction(row)"
+                                class="mr-2 text-blue-600 hover:text-blue-900"
+                            >
+                                Editar
+                            </button>
+                            <button
+                                @click="deleteTransaction(row)"
+                                class="text-red-600 hover:text-red-900"
+                            >
+                                Excluir
+                            </button>
+                        </template>
+                    </DataTable>
                 </div>
             </div>
         </div>

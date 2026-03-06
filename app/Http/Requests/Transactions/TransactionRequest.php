@@ -26,7 +26,8 @@ class TransactionRequest extends FormRequest
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric',
             'date' => 'required|date',
-            'category_id' => 'required|exists:categories,id'
+            'category_id' => 'required|exists:categories,id',
+            'payment_id' => 'required|exists:payments,id'
         ];
     }
 
@@ -39,7 +40,8 @@ class TransactionRequest extends FormRequest
             'amount.required' => 'O valor é necessário',
             'amount.numeric' => 'O valor precisa ser um número válido',
             'data.required' => 'A data é necessária',
-            'category_id.required' => 'A categoria é necessária'
+            'category_id.required' => 'A categoria é necessária',
+            'payment_id.required' => 'A forma de pagamento é necessária'
         ];
     }
 }

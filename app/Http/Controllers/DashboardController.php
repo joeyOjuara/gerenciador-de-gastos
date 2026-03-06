@@ -43,6 +43,7 @@ class DashboardController extends Controller
         // Últimas transações (10 mais recentes)
         $recentTransactions = $user->transactions()
             ->with('category')
+            ->with('payment')
             ->orderBy('date', 'desc')
             ->take(10)
             ->get();

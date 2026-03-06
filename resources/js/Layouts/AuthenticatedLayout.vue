@@ -12,9 +12,9 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-gray-900">
             <nav
-                class="border-b border-gray-100 bg-white"
+                class="border-b border-gray-100 bg-gray-600"
             >
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -44,6 +44,12 @@ const showingNavigationDropdown = ref(false);
                                     :active="route().current('categories.*')"
                                 >
                                     Categorias
+                                </NavLink>
+                                <NavLink
+                                    :href="route('payments.index')"
+                                    :active="route().current('payments.*')"
+                                >
+                                    Formas de Pagamento
                                 </NavLink>
                                 <NavLink
                                     :href="route('transactions.index')"
@@ -165,6 +171,12 @@ const showingNavigationDropdown = ref(false);
                             Categorias
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
+                            :href="route('payments.index')"
+                            :active="route().current('payments.*')"
+                        >
+                            Formas de Pagamento
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
                             :href="route('transactions.index')"
                             :active="route().current('transactions.*')"
                         >
@@ -172,14 +184,9 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
                     </div>
 
-                    <!-- Responsive Settings Options -->
-                    <div
-                        class="border-t border-gray-200 pb-1 pt-4"
-                    >
+                    <div class="border-t border-gray-200 pb-1 pt-4">
                         <div class="px-4">
-                            <div
-                                class="text-base font-medium text-gray-800"
-                            >
+                            <div class="text-base font-medium text-gray-800">
                                 {{ $page.props.auth.user.name }}
                             </div>
                             <div class="text-sm font-medium text-gray-500">
@@ -205,11 +212,14 @@ const showingNavigationDropdown = ref(false);
 
             <!-- Page Heading -->
             <header
-                class="bg-white shadow"
+                class="shadow border-gray-700 bg-gray-800"
                 v-if="$slots.header"
             >
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <slot name="header" />
+                    <div class="flex items-center justify-between">
+                        <slot name="header" />
+                        <Link v-if="!route().current('dashboard')" :href="route('dashboard')" class="text-gray-400 hover:text-gray-100">Voltar ao Dashboard</Link>
+                    </div>
                 </div>
             </header>
 

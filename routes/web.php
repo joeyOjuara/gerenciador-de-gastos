@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PaymentController;
 
 Route::redirect('/', '/login');
 
@@ -24,6 +25,13 @@ Route::middleware(['auth', 'verified'])->prefix('categories')->group(function ()
     Route::post('/store', [CategoryController::class, 'store'])->name('categories.store');
     Route::delete('/delete/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     Route::put('/update/{id}', [CategoryController::class, 'update'])->name('categories.update');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('payments')->group(function () {
+    Route::get('/', [PaymentController::class, 'index'])->name('payments.index');
+    Route::post('/store', [PaymentController::class, 'store'])->name('payments.store');
+    Route::delete('/delete/{id}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+    Route::put('/update/{id}', [PaymentController::class, 'update'])->name('payments.update');
 });
 
 route::middleware(['auth', 'verified'])->prefix('transactions')->group(function () {

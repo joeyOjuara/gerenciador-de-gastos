@@ -5,7 +5,7 @@
     import { tableSchemas } from '@/Objects/tableSchemas';
 
     const props = defineProps({
-        categories: Array
+        payments: Array
     });
 
     const form = useForm({
@@ -13,38 +13,38 @@
         name: ''
     });
 
-    const editCategory = (category) => {
+    const editPayment = (payment) => {
         form.errors = []
-        form.id = category.id
-        form.name = category.name
+        form.id = payment.id
+        form.name = payment.name
     };
 
-    const saveCategory = () => {
+    const savePayment = () => {
         form.errors = []
         if (form.id) {
-            form.put(route('categories.update', form.id), {
+            form.put(route('payments.update', form.id), {
                 onSuccess: () => {
                     form.reset()
                     form.errors = []
                 }
             });
         } else {
-            form.post(route('categories.store'), {
+            form.post(route('payments.store'), {
                 onSuccess: () => form.reset()
             });
         }
     };
 
-    const deleteCategory = (category) => {
+    const deletePayment = (payment) => {
         form.reset()
         form.errors = []
-        if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-            form.delete(route('categories.destroy', category.id))
+        if (confirm('Tem certeza que deseja excluir esta forma de pagamento?')) {
+            form.delete(route('payments.destroy', payment.id))
         }
     };
 
     const columns = [
-        ...tableSchemas.categories,
+        ...tableSchemas.payments,
         {
             label: "Ações",
             key: "actions",
@@ -54,21 +54,21 @@
 </script>
 
 <template>
-    <Head title="Categorias" />
+    <Head title="Pagamentos" />
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-50">Categorias</h2>
+            <h2 class="text-xl font-semibold leading-tight text-gray-50">Pagamentos</h2>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div class="p-6 bg-gray rounded-lg shadow">
                     <!-- Formulário -->
-                    <form @submit.prevent="saveCategory" class="mb-8">
+                    <form @submit.prevent="savePayment" class="mb-8">
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
                             <div class="md:col-span-3">
-                                <label class="block mb-2 text-sm font-medium text-gray-50">Nome da Categoria</label>
+                                <label class="block mb-2 text-sm font-medium text-gray-50">Forma de Pagamento</label>
                                 <input
                                     v-model="form.name"
                                     type="text"
@@ -104,19 +104,18 @@
                     <!-- Tabela de Categorias -->
                     <DataTable
                         :columns="columns"
-                        :rows="categories"
+                        :rows="payments"
                         :perPage="20"
-                        :search_field="true"
                     >
                         <template #actions="{row}">
                             <button
-                                @click="editCategory(row)"
+                                @click="editPayment(row)"
                                 class="mr-2 text-blue-600 hover:text-blue-900"
                             >
                                 Editar
                             </button>
                             <button
-                                @click="deleteCategory(row)"
+                                @click="deletePayment(row)"
                                 class="text-red-600 hover:text-red-900"
                             >
                                 Excluir
