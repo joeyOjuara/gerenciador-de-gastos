@@ -45,7 +45,7 @@ class DashboardController extends Controller
             ->with('category')
             ->with('payment')
             ->orderBy('date', 'desc')
-            ->take(10)
+            ->take(5)
             ->get();
 
         return Inertia::render('Dashboard',[

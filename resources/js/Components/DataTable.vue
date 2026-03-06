@@ -60,13 +60,16 @@ const sortedRows = computed(() => {
 })
 
 const totalPages = computed(() =>
-    Math.ceil(sortedRows.value.length / (props.perPage ? props.perPage : 1) )
+    Math.ceil(sortedRows.value.length / props.perPage)
 )
 
 const paginatedRows = computed(() => {
-    const start = (currentPage.value - 1) * (props.perPage ? props.perPage : 1)
+    if(!props.perPage) {
+        return props.rows
+    }
+    const start = (currentPage.value - 1) * props.perPage
     console.log(start)
-    return sortedRows.value.slice(start, start + (props.perPage ? props.perPage : 1))
+    return sortedRows.value.slice(start, start + props.perPage)
 })
 
 function nextPage() {
