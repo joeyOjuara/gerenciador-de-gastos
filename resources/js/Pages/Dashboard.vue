@@ -45,19 +45,19 @@
                     <!-- Income Card -->
                     <div class="p-6 bg-green-100 rounded-lg shadow">
                         <div class="text-lg font-medium text-green-700">Receitas</div>
-                        <div class="text-2xl font-bold">{{ formatValue(totalIncome) }}</div>
+                        <div class="text-2xl text-black font-bold">{{ formatValue(totalIncome) }}</div>
                     </div>
 
                     <!-- Expenses Card -->
                     <div class="p-6 bg-red-100 rounded-lg shadow">
                         <div class="text-lg font-medium text-red-700">Despesas</div>
-                        <div class="text-2xl font-bold">{{ formatValue(totalExpenses) }}</div>
+                        <div class="text-2xl text-black font-bold">{{ formatValue(totalExpenses) }}</div>
                     </div>
 
                     <!-- Balance Card -->
                     <div class="p-6 bg-blue-100 rounded-lg shadow">
                         <div class="text-lg font-medium text-blue-700">Saldo</div>
-                        <div class="text-2xl font-bold">{{ formatValue(totalIncome - totalExpenses) }}</div>
+                        <div class="text-2xl text-black font-bold">{{ formatValue(totalIncome - totalExpenses) }}</div>
                     </div>
                 </div>
 

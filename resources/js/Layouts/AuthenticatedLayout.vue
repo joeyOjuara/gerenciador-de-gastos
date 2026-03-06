@@ -1,232 +1,176 @@
 <script setup>
-import { ref } from 'vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { ref } from "vue"
+import { Link, usePage } from "@inertiajs/vue3"
+import ApplicationLogo from "@/Components/ApplicationLogo.vue"
 
-const showingNavigationDropdown = ref(false);
+const collapsed = ref(false)
+const mobileOpen = ref(false)
+
+const page = usePage()
+
+const menu = [
+    { name: "Dashboard", route: "/dashboard", icon: "🏠" },
+    { name: "Categorias", route: "/categories", icon: "📂" },
+    { name: "Formas de Pagamento", route: "/payments", icon: "💳" },
+    { name: "Transações", route: "/transactions", icon: "💰" },
+]
+
+const isActive = (route) => page.url.startsWith(route)
 </script>
 
 <template>
-    <div>
-        <div class="min-h-screen bg-gray-900">
-            <nav
-                class="border-b border-gray-100 bg-gray-600"
-            >
-                <!-- Primary Navigation Menu -->
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-16 justify-between">
-                        <div class="flex">
-                            <!-- Logo -->
-                            <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
-                                    <ApplicationLogo
-                                        class="block h-12 w-auto fill-current text-gray-800"
-                                    />
-                                </Link>
-                            </div>
+<div class="flex min-h-screen bg-gray-950 text-gray-200">
 
-                            <!-- Navigation Links -->
-                            <div
-                                class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
-                            >
-                                <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
-                                >
-                                    Dashboard
-                                </NavLink>
-                                <NavLink
-                                    :href="route('categories.index')"
-                                    :active="route().current('categories.*')"
-                                >
-                                    Categorias
-                                </NavLink>
-                                <NavLink
-                                    :href="route('payments.index')"
-                                    :active="route().current('payments.*')"
-                                >
-                                    Formas de Pagamento
-                                </NavLink>
-                                <NavLink
-                                    :href="route('transactions.index')"
-                                    :active="route().current('transactions.*')"
-                                >
-                                    Transações
-                                </NavLink>
-                            </div>
-                        </div>
+    <!-- OVERLAY MOBILE -->
+    <div
+        v-if="mobileOpen"
+        @click="mobileOpen = false"
+        class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+    ></div>
 
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                            <!-- Settings Dropdown -->
-                            <div class="relative ms-3">
-                                <Dropdown align="right" width="48">
-                                    <template #trigger>
-                                        <span class="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {{ $page.props.auth.user.name }}
+    <!-- SIDEBAR -->
+    <aside
+        :class="[
+            'fixed lg:static z-50 h-screen flex flex-col justify-between bg-gray-900 border-r border-gray-800 transition-all duration-300',
+            collapsed ? 'w-20' : 'w-80',
+            mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        ]"
+    >
 
-                                                <svg
-                                                    class="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fill-rule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clip-rule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </template>
+        <div>
 
-                                    <template #content>
-                                        <DropdownLink
-                                            :href="route('profile.edit')"
-                                        >
-                                            Perfil
-                                        </DropdownLink>
-                                        <DropdownLink
-                                            :href="route('logout')"
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Sair
-                                        </DropdownLink>
-                                    </template>
-                                </Dropdown>
-                            </div>
-                        </div>
+            <!-- HEADER -->
+            <div class="flex items-center justify-between px-4 py-4 border-b border-gray-800">
 
-                        <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
-                            <button
-                                @click="
-                                    showingNavigationDropdown =
-                                        !showingNavigationDropdown
-                                "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
-                            >
-                                <svg
-                                    class="h-6 w-6"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        :class="{
-                                            hidden: showingNavigationDropdown,
-                                            'inline-flex':
-                                                !showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                    <path
-                                        :class="{
-                                            hidden: !showingNavigationDropdown,
-                                            'inline-flex':
-                                                showingNavigationDropdown,
-                                        }"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <span v-if="!collapsed" class="font-bold text-lg">
+                    <Link :href="route('dashboard')">
+                        <ApplicationLogo
+                            class="block h-12 w-auto fill-current text-gray-800"
+                        />
+                    </Link>
+                </span>
+                <span v-if="!collapsed" class="font-bold text-lg">
+                    Controle de Gastos
+                </span>
 
-                <!-- Responsive Navigation Menu -->
-                <div
-                    :class="{
-                        block: showingNavigationDropdown,
-                        hidden: !showingNavigationDropdown,
-                    }"
-                    class="sm:hidden"
+                <button
+                    @click="collapsed = !collapsed"
+                    class="hidden lg:block text-gray-400 hover:text-white"
                 >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('categories.index')"
-                            :active="route().current('categories.*')"
-                        >
-                            Categorias
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('payments.index')"
-                            :active="route().current('payments.*')"
-                        >
-                            Formas de Pagamento
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('transactions.index')"
-                            :active="route().current('transactions.*')"
-                        >
-                            Transações
-                        </ResponsiveNavLink>
-                    </div>
+                    ☰
+                </button>
 
-                    <div class="border-t border-gray-200 pb-1 pt-4">
-                        <div class="px-4">
-                            <div class="text-base font-medium text-gray-800">
-                                {{ $page.props.auth.user.name }}
-                            </div>
-                            <div class="text-sm font-medium text-gray-500">
-                                {{ $page.props.auth.user.email }}
-                            </div>
-                        </div>
+                <button
+                    @click="mobileOpen = false"
+                    class="lg:hidden text-gray-400 hover:text-white"
+                >
+                    ✕
+                </button>
 
-                        <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
-                                Perfil
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                :href="route('logout')"
-                                method="post"
-                                as="button"
-                            >
-                                Sair
-                            </ResponsiveNavLink>
-                        </div>
-                    </div>
-                </div>
+            </div>
+
+            <!-- MENU -->
+            <nav class="mt-4 space-y-1">
+
+                <Link
+                    v-for="item in menu"
+                    :key="item.route"
+                    :href="item.route"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg mx-2 transition"
+                    :class="isActive(item.route)
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                    @click="mobileOpen = false"
+                >
+
+                    <span class="text-lg">
+                        {{ item.icon }}
+                    </span>
+
+                    <span v-if="!collapsed">
+                        {{ item.name }}
+                    </span>
+
+                </Link>
+
             </nav>
 
-            <!-- Page Heading -->
-            <header
-                class="shadow border-gray-700 bg-gray-800"
-                v-if="$slots.header"
-            >
-                <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <div class="flex items-center justify-between">
-                        <slot name="header" />
-                        <Link v-if="!route().current('dashboard')" :href="route('dashboard')" class="text-gray-400 hover:text-gray-100">Voltar ao Dashboard</Link>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main>
-                <slot />
-            </main>
         </div>
+
+        <!-- USER MENU (DESKTOP) -->
+        <div class="border-t border-gray-800 p-4 hidden lg:block">
+
+            <div v-if="!collapsed" class="mb-2 text-sm">
+                {{ $page.props.auth.user.name }}
+            </div>
+
+            <Link
+                :href="route('profile.edit')"
+                class="block text-sm text-gray-400 hover:text-white mb-2"
+            >
+                Perfil
+            </Link>
+
+            <Link
+                :href="route('logout')"
+                method="post"
+                as="button"
+                class="text-sm text-red-400 hover:text-red-300"
+            >
+                Sair
+            </Link>
+
+        </div>
+
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <div class="flex-1 flex flex-col">
+
+        <!-- TOPBAR -->
+        <header class="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-gray-900">
+
+            <!-- BOTÃO MOBILE -->
+            <button
+                @click="mobileOpen = true"
+                class="lg:hidden text-gray-400 hover:text-white"
+            >
+                ☰
+            </button>
+
+            <h1 class="font-semibold">
+                Dashboard
+            </h1>
+
+            <!-- USER MOBILE -->
+            <div class="flex items-center gap-4 lg:hidden">
+
+                <Link
+                    :href="route('profile.edit')"
+                    class="text-gray-400 hover:text-white text-sm"
+                >
+                    Perfil
+                </Link>
+
+                <Link
+                    :href="route('logout')"
+                    method="post"
+                    as="button"
+                    class="text-red-400 hover:text-red-300 text-sm"
+                >
+                    Sair
+                </Link>
+
+            </div>
+
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="flex-1">
+            <slot />
+        </main>
+
     </div>
+
+</div>
 </template>
