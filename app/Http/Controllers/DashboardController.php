@@ -2,57 +2,80 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Category;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    /**
-     * Get dashboard data
-     */
-    public function index()
+    public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-        $now = Carbon::now();
 
-        // Total de gastos no mês atual
-        $monthlyTotal = $user->transactions()
-            ->whereMonth('date', $now->month)
-            ->whereYear('date', $now->year)
+        $month = (int) $request->input('month', now()->month);
+        $year  = (int) $request->input('year',  now()->year);
+
+        $totalIncome = (float) $user->transactions()
+            ->where('type', 'income')
+            ->whereMonth('date', $month)
+            ->whereYear('date', $year)
             ->sum('amount');
 
-        // Gastos por categoria no mês atual
-        $categories = Category::withSum(['transactions' => function ($query) use ($now) {
-                $query->whereMonth('date', $now->month)
-                    ->whereYear('date', $now->year);
-            }], 'amount')
-            ->get();
+        $totalExpenses = (float) $user->transactions()
+            ->where('type', 'expense')
+            ->whereMonth('date', $month)
+            ->whereYear('date', $year)
+            ->sum('amount');
+
+        $categories = Category::withSum(['transactions' => function ($q) use ($month, $year) {
+            $q->whereMonth('date', $month)
+              ->whereYear('date', $year)
+              ->where('type', 'expense');
+        }], 'amount')->get();
 
         $categoriesData = [
-            'labels' => $categories->pluck('name'),
-            'datasets' => [
-                [
-                    'label' => 'Despesas por Categoria',
-                    'data' => $categories->pluck('transactions_sum_amount'),
-                ]
-            ]
+            'labels'   => $categories->pluck('name'),
+            'datasets' => [[
+                'label' => 'Despesas por Categoria',
+                'data'  => $categories->pluck('transactions_sum_amount'),
+            ]],
         ];
 
-        // Últimas transações (10 mais recentes)
+        $monthlyData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthlyData[] = [
+                'month'   => $date->translatedFormat('M/y'),
+                'income'  => (float) $user->transactions()
+                    ->where('type', 'income')
+                    ->whereMonth('date', $date->month)
+                    ->whereYear('date', $date->year)
+                    ->sum('amount'),
+                'expense' => (float) $user->transactions()
+                    ->where('type', 'expense')
+                    ->whereMonth('date', $date->month)
+                    ->whereYear('date', $date->year)
+                    ->sum('amount'),
+            ];
+        }
+
         $recentTransactions = $user->transactions()
-            ->with('category')
-            ->with('payment')
+            ->with('category', 'payment')
             ->orderBy('date', 'desc')
             ->take(5)
             ->get();
 
-        return Inertia::render('Dashboard',[
-            'totalExpenses' => floatval($monthlyTotal),
-            'categoriesData' => $categoriesData,
-            'transactions' => $recentTransactions,
-            'totalIncome' => 4200.15
+        return Inertia::render('Dashboard', [
+            'totalIncome'      => $totalIncome,
+            'totalExpenses'    => $totalExpenses,
+            'categoriesData'   => $categoriesData,
+            'monthlyData'      => $monthlyData,
+            'transactions'     => $recentTransactions,
+            'currentMonth'     => $month,
+            'currentYear'      => $year,
         ]);
     }
 }

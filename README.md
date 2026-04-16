@@ -1,59 +1,217 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Gerenciador de Gastos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicação web de gerenciamento financeiro pessoal construída com **Laravel 12** e **Vue.js 3**, permitindo o controle de receitas, despesas, categorias e formas de pagamento com visualizações em gráficos.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Funcionalidades
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Dashboard** — Visão geral financeira com cards de resumo, gráfico de barras por categoria e gráfico de linha dos últimos 6 meses
+- **Transações (Despesas)** — Cadastro, edição e exclusão de gastos com suporte a transações recorrentes (semanal, mensal, anual)
+- **Receitas** — Cadastro, edição e exclusão de entradas financeiras
+- **Categorias** — Gerenciamento de categorias de despesa
+- **Formas de Pagamento** — Gerenciamento de métodos de pagamento (cartão de crédito, débito, dinheiro, etc.)
+- **Perfil** — Edição de dados do usuário, senha e exclusão de conta
+- **Autenticação completa** — Registro, login, verificação de e-mail e redefinição de senha
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Stack Tecnológica
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Backend
+| Tecnologia | Versão |
+|---|---|
+| PHP | 8.2+ |
+| Laravel | 12.x |
+| Inertia.js (server) | 2.x |
+| Laravel Sanctum | 4.x |
+| Ziggy | 2.x |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Frontend
+| Tecnologia | Versão |
+|---|---|
+| Vue.js | 3.4 |
+| Inertia.js (client) | 2.x |
+| Tailwind CSS | 3.2 |
+| Chart.js | 4.5 |
+| Vue-ChartJS | 5.3 |
+| Vite | 7.x |
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Pré-requisitos
 
-### Premium Partners
+- PHP >= 8.2
+- Composer
+- Node.js >= 18
+- SQLite (padrão) ou MySQL/PostgreSQL
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## Instalação
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Instalação automática
 
-## Code of Conduct
+```bash
+git clone <url-do-repositorio>
+cd gerenciador-de-gastos
+composer setup
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+O script `composer setup` executa automaticamente:
+1. `composer install`
+2. Cria o arquivo `.env` a partir do `.env.example`
+3. `php artisan key:generate`
+4. `php artisan migrate --force`
+5. `npm install`
+6. `npm run build`
 
-## Security Vulnerabilities
+### Instalação manual
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+git clone <url-do-repositorio>
+cd gerenciador-de-gastos
 
-## License
+# Dependências PHP
+composer install
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Variáveis de ambiente
+cp .env.example .env
+php artisan key:generate
+
+# Banco de dados
+php artisan migrate
+
+# Dependências Node e build
+npm install
+npm run build
+```
+
+---
+
+## Executando em desenvolvimento
+
+```bash
+composer dev
+```
+
+Esse comando sobe em paralelo:
+- Servidor Laravel (`php artisan serve`)
+- Queue listener (`php artisan queue:listen`)
+- Visualizador de logs (`php artisan pail`)
+- Servidor de desenvolvimento Vite (`npm run dev`)
+
+---
+
+## Estrutura do Projeto
+
+```
+app/
+├── Console/Commands/
+│   ├── GenerateRecurringTransactions.php   # Gera transações recorrentes
+│   └── MakeRepositoryCommand.php           # Comando para criar repositórios
+├── Contracts/                              # Interfaces dos repositórios
+├── Http/
+│   ├── Controllers/                        # Controllers da aplicação
+│   └── Requests/                           # Form Requests (validação)
+├── Models/                                 # Modelos Eloquent
+├── Providers/
+│   └── RepositoryServiceProvider.php       # Bind interfaces → implementações
+└── Repositories/                           # Implementações dos repositórios
+
+resources/js/
+├── Components/                             # Componentes Vue reutilizáveis
+├── Layouts/                                # Layouts da aplicação
+├── Pages/                                  # Páginas Inertia (Vue)
+│   ├── Auth/                               # Telas de autenticação
+│   ├── Categories/                         # Gerenciamento de categorias
+│   ├── Dashboard.vue                       # Dashboard principal
+│   ├── Incomes/                            # Gerenciamento de receitas
+│   ├── Payments/                           # Formas de pagamento
+│   ├── Profile/                            # Perfil do usuário
+│   └── Transactions/                       # Gerenciamento de despesas
+├── composables/                            # Composables Vue
+└── utils/                                  # Utilitários (ex: formatCurrency)
+
+database/migrations/                        # Migrations do banco de dados
+routes/web.php                              # Definição de rotas
+```
+
+---
+
+## Modelos e Relacionamentos
+
+```
+User
+ └── hasMany → Transaction
+
+Category
+ └── hasMany → Transaction
+
+Payment
+ └── hasMany → Transaction
+
+Transaction
+ ├── belongsTo → User
+ ├── belongsTo → Category
+ ├── belongsTo → Payment
+ ├── type: "income" | "expense"
+ └── recurrence: "none" | "weekly" | "monthly" | "yearly"
+```
+
+---
+
+## Transações Recorrentes
+
+A aplicação suporta transações recorrentes. Para gerar automaticamente as transações devidas, execute o comando:
+
+```bash
+php artisan transactions:generate-recurring
+```
+
+Recomenda-se agendar esse comando para rodar diariamente via Laravel Scheduler. Adicione ao `app/Console/Kernel.php`:
+
+```php
+$schedule->command('transactions:generate-recurring')->daily();
+```
+
+---
+
+## Rotas Principais
+
+| Método | URI | Descrição |
+|---|---|---|
+| GET | `/dashboard` | Dashboard financeiro |
+| GET/POST | `/transactions` | Listar e criar despesas |
+| PUT/DELETE | `/transactions/{id}` | Editar e excluir despesa |
+| GET/POST | `/incomes` | Listar e criar receitas |
+| PUT/DELETE | `/incomes/{id}` | Editar e excluir receita |
+| GET/POST | `/categories` | Listar e criar categorias |
+| PUT/DELETE | `/categories/{id}` | Editar e excluir categoria |
+| GET/POST | `/payments` | Listar e criar formas de pagamento |
+| PUT/DELETE | `/payments/{id}` | Editar e excluir forma de pagamento |
+| GET/PUT | `/profile` | Perfil do usuário |
+
+---
+
+## Testes
+
+```bash
+composer test
+# ou
+php artisan test
+```
+
+---
+
+## Padrões de Arquitetura
+
+- **Repository Pattern** — Abstração da camada de acesso a dados via interfaces em `app/Contracts/` e implementações em `app/Repositories/`
+- **Form Requests** — Validação centralizada em `app/Http/Requests/`
+- **Inertia.js** — Comunicação entre Laravel e Vue.js sem necessidade de API REST separada
+
+---
+
+## Licença
+
+Este projeto está sob a licença [MIT](https://opensource.org/licenses/MIT).

@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
@@ -34,11 +33,18 @@ Route::middleware(['auth', 'verified'])->prefix('payments')->group(function () {
     Route::put('/update/{id}', [PaymentController::class, 'update'])->name('payments.update');
 });
 
-route::middleware(['auth', 'verified'])->prefix('transactions')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('transactions')->group(function () {
     Route::get('/', [TransactionController::class, 'index'])->name('transactions.index');
     Route::post('/store', [TransactionController::class, 'store'])->name('transactions.store');
     Route::delete('/delete/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
     Route::put('/update/{id}', [TransactionController::class, 'update'])->name('transactions.update');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('incomes')->group(function () {
+    Route::get('/', [TransactionController::class, 'incomeIndex'])->name('incomes.index');
+    Route::post('/store', [TransactionController::class, 'store'])->name('incomes.store');
+    Route::delete('/delete/{id}', [TransactionController::class, 'destroy'])->name('incomes.destroy');
+    Route::put('/update/{id}', [TransactionController::class, 'update'])->name('incomes.update');
 });
 
 require __DIR__ . '/auth.php';

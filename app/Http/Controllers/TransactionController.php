@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Contracts\CategoryRepository;
@@ -12,69 +13,103 @@ use App\Http\Requests\Transactions\TransactionRequest;
 
 class TransactionController extends Controller
 {
-
     public function __construct(
         private readonly CategoryRepository $categoryRepository,
         private readonly TransactionRepository $transactionRepository,
         private readonly PaymentRepository $paymentRepository
-    )
-    {}
+    ) {}
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Auth::user()->transactions()
-            ->with('category')
-            ->with('payment')
-            ->orderBy('date', 'desc')
-            ->get();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $query = $user->transactions()
+            ->where('type', 'expense')
+            ->with('category', 'payment')
+            ->orderBy('date', 'desc');
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('payment_id')) {
+            $query->where('payment_id', $request->payment_id);
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('date', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('date', $request->year);
+        }
 
         return Inertia::render('Transactions/Index', [
-            'transactions' => $transactions,
-            'categories' => $this->categoryRepository->orderBy('name'),
-            'payments' => $this->paymentRepository->orderBy('name')
+            'transactions' => $query->paginate(20)->withQueryString(),
+            'categories'   => $this->categoryRepository->orderBy('name'),
+            'payments'     => $this->paymentRepository->orderBy('name'),
+            'filters'      => $request->only(['category_id', 'payment_id', 'month', 'year']),
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function incomeIndex(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $query = $user->transactions()
+            ->where('type', 'income')
+            ->with('category', 'payment')
+            ->orderBy('date', 'desc');
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+        if ($request->filled('payment_id')) {
+            $query->where('payment_id', $request->payment_id);
+        }
+        if ($request->filled('month') && $request->filled('year')) {
+            $query->whereMonth('date', $request->month)
+                  ->whereYear('date', $request->year);
+        }
+
+        return Inertia::render('Incomes/Index', [
+            'transactions' => $query->paginate(20)->withQueryString(),
+            'categories'   => $this->categoryRepository->orderBy('name'),
+            'payments'     => $this->paymentRepository->orderBy('name'),
+            'filters'      => $request->only(['category_id', 'payment_id', 'month', 'year']),
+        ]);
+    }
+
     public function store(TransactionRequest $request)
     {
-
         try {
             $request->merge([
-                'user_id' => Auth::user()->id
+                'user_id' => Auth::id(),
+                'next_recurrence_date'  => $this->calcNextDate($request->date, $request->recurrence),
             ]);
 
             $this->transactionRepository->store($request);
             return redirect()->back();
-
         } catch (\Exception $e) {
             return redirect()->back()->withErrors($e->getMessage());
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(TransactionRequest $request, $transactionId)
     {
         try {
+            $request->merge([
+                'next_recurrence_date' => $this->calcNextDate($request->date, $request->recurrence),
+            ]);
+
             $transaction = $this->transactionRepository->findById($transactionId);
             $this->transactionRepository->update($transaction, $request);
             return redirect()->back();
         } catch (\Exception $e) {
             return redirect()->back()->withErrors($e->getMessage());
         }
-
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($transactionId)
     {
         try {
@@ -84,5 +119,18 @@ class TransactionController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors($e->getMessage());
         }
+    }
+
+    private function calcNextDate(string $date, ?string $recurrence): ?string
+    {
+        if (!$recurrence || $recurrence === 'none') return null;
+
+        $actualDay = Carbon::parse($date);
+        return match ($recurrence) {
+            'weekly'  => $actualDay->addWeek()->toDateString(),
+            'monthly' => $actualDay->addMonth()->toDateString(),
+            'yearly'  => $actualDay->addYear()->toDateString(),
+            default   => null,
+        };
     }
 }

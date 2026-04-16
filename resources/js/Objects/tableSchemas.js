@@ -1,3 +1,5 @@
+import { formatCurrency } from '@/utils/formatCurrency'
+
 export const tableSchemas = {
     transactions: [
         {
@@ -15,7 +17,7 @@ export const tableSchemas = {
         {
             label: "Valor",
             key: "amount",
-            format: value => `R$ ${parseFloat(value).toFixed(2)}`
+            format: value => formatCurrency(value)
         },
         {
             label: "Data",

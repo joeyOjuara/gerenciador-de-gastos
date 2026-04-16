@@ -13,6 +13,9 @@ class Transaction extends Model
         'amount',
         'description',
         'date',
+        'type',
+        'recurrence',
+        'next_recurrence_date',
         'category_id',
         'user_id',
         'payment_id'

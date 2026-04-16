@@ -1,7 +1,12 @@
 <script setup>
     import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
     import { Head, useForm } from '@inertiajs/vue3';
+    import { ref } from 'vue';
     import DataTable from '@/Components/DataTable.vue';
+    import ConfirmModal from '@/Components/ConfirmModal.vue';
+    import TextInput from '@/Components/TextInput.vue';
+    import InputLabel from '@/Components/InputLabel.vue';
+    import InputError from '@/Components/InputError.vue';
     import { tableSchemas } from '@/Objects/tableSchemas';
 
     const props = defineProps({
@@ -13,20 +18,20 @@
         name: ''
     });
 
+    const showConfirm = ref(false)
+    const pendingDelete = ref(null)
+
     const editPayment = (payment) => {
-        form.errors = []
+        form.clearErrors()
         form.id = payment.id
         form.name = payment.name
     };
 
     const savePayment = () => {
-        form.errors = []
+        form.clearErrors()
         if (form.id) {
             form.put(route('payments.update', form.id), {
-                onSuccess: () => {
-                    form.reset()
-                    form.errors = []
-                }
+                onSuccess: () => form.reset()
             });
         } else {
             form.post(route('payments.store'), {
@@ -37,10 +42,19 @@
 
     const deletePayment = (payment) => {
         form.reset()
-        form.errors = []
-        if (confirm('Tem certeza que deseja excluir esta forma de pagamento?')) {
-            form.delete(route('payments.destroy', payment.id))
-        }
+        pendingDelete.value = payment
+        showConfirm.value = true
+    };
+
+    const confirmDelete = () => {
+        form.delete(route('payments.destroy', pendingDelete.value.id))
+        showConfirm.value = false
+        pendingDelete.value = null
+    };
+
+    const cancelDelete = () => {
+        showConfirm.value = false
+        pendingDelete.value = null
     };
 
     const columns = [
@@ -50,50 +64,39 @@
             key: "actions",
         }
     ]
-
 </script>
 
 <template>
-    <Head title="Pagamentos" />
+    <Head title="Formas de Pagamento" />
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-50">Pagamentos</h2>
+            <h2 class="text-xl font-semibold leading-tight text-gray-50">Formas de Pagamento</h2>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div class="p-6 bg-gray rounded-lg shadow">
+                <div class="p-6 bg-gray-900 rounded-lg shadow border border-gray-700">
                     <!-- Formulário -->
                     <form @submit.prevent="savePayment" class="mb-8">
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
                             <div class="md:col-span-3">
-                                <label class="block mb-2 text-sm font-medium text-gray-50">Forma de Pagamento</label>
-                                <input
-                                    v-model="form.name"
-                                    type="text"
-                                    :class="[
-                                        'w-full p-2 border rounded-md',
-                                        form.errors.name ? 'border-red-500' : 'border-gray-300'
-                                    ]"
-                                    required
-                                >
-                                <p v-if="form.errors.name" class="mt-1 text-sm text-red-600 bg-red-100 border border-red-300 rounded-md">
-                                    {{ form.errors.name }}
-                                </p>
+                                <InputLabel value="Forma de Pagamento" class="mb-2" />
+                                <TextInput v-model="form.name" required />
+                                <InputError :message="form.errors.name" class="mt-1" />
                             </div>
-                            <div class="flex items-end">
+                            <div class="flex items-end gap-2">
                                 <button
                                     type="submit"
-                                    class="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                                    class="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
                                 >
                                     {{ form.id ? 'Atualizar' : 'Adicionar' }}
                                 </button>
                                 <button
                                     v-if="form.id"
-                                    @click="form.reset(); form.errors = []"
+                                    @click="form.reset(); form.clearErrors()"
                                     type="button"
-                                    class="w-full px-4 py-2 ml-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
+                                    class="w-full px-4 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-700 transition"
                                 >
                                     Cancelar
                                 </button>
@@ -101,22 +104,23 @@
                         </div>
                     </form>
 
-                    <!-- Tabela de Categorias -->
+                    <!-- Tabela de Formas de Pagamento -->
                     <DataTable
                         :columns="columns"
                         :rows="payments"
                         :perPage="20"
+                        :search_field="true"
                     >
                         <template #actions="{row}">
                             <button
                                 @click="editPayment(row)"
-                                class="mr-2 text-blue-600 hover:text-blue-900"
+                                class="mr-2 text-blue-400 hover:text-blue-300 transition"
                             >
                                 Editar
                             </button>
                             <button
                                 @click="deletePayment(row)"
-                                class="text-red-600 hover:text-red-900"
+                                class="text-red-400 hover:text-red-300 transition"
                             >
                                 Excluir
                             </button>
@@ -126,4 +130,11 @@
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <ConfirmModal
+        :show="showConfirm"
+        message="Tem certeza que deseja excluir esta forma de pagamento?"
+        @confirm="confirmDelete"
+        @cancel="cancelDelete"
+    />
 </template>
