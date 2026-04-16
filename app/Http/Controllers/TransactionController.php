@@ -19,7 +19,7 @@ class TransactionController extends Controller
         private readonly PaymentRepository $paymentRepository
     ) {}
 
-    public function index(Request $request)
+    public function expenseIndex(Request $request)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
@@ -64,12 +64,17 @@ class TransactionController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
+
         if ($request->filled('payment_id')) {
             $query->where('payment_id', $request->payment_id);
         }
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('date', $request->month)
-                  ->whereYear('date', $request->year);
+
+        if ($request->filled('month')) {
+            $query->whereMonth('date', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('date', $request->year);
         }
 
         return Inertia::render('Incomes/Index', [
