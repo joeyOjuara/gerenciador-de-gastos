@@ -22,7 +22,7 @@ export const tableSchemas = {
         {
             label: "Data",
             key: "date",
-            format: value => new Date(value).toLocaleDateString('pt-BR')
+            format: value => new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR')
         }
     ],
 
