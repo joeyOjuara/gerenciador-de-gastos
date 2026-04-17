@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->prefix('transactions')->group(function 
     Route::get('/', [TransactionController::class, 'expenseIndex'])->name('transactions.index');
     Route::post('/store', [TransactionController::class, 'store'])->name('transactions.store');
     Route::delete('/delete/{id}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
+    Route::delete('/delete-bulk', [TransactionController::class, 'destroyBulk'])->name('transactions.destroyBulk');
     Route::put('/update/{id}', [TransactionController::class, 'update'])->name('transactions.update');
 });
 

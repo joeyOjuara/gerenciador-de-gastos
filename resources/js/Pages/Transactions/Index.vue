@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import { useCurrencyInput } from 'vue-currency-input'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
@@ -19,16 +19,50 @@ const props = defineProps({
 
 const toast = useToast()
 
+// ── Seleção em massa ───────────────────────────────────────────────────────────
+const selectedIds       = ref([])
+const showBulkConfirm   = ref(false)
+
+const isAllSelected = computed(() =>
+    props.transactions.data.length > 0 &&
+    props.transactions.data.every(t => selectedIds.value.includes(t.id))
+)
+
+const toggleAll = () => {
+    if (isAllSelected.value) selectedIds.value = []
+    else selectedIds.value = props.transactions.data.map(t => t.id)
+}
+
+const toggleSelect = (id) => {
+    const idx = selectedIds.value.indexOf(id)
+    if (idx > -1) selectedIds.value.splice(idx, 1)
+    else selectedIds.value.push(id)
+}
+
+const confirmBulkDelete = () => {
+    router.delete(route('transactions.destroyBulk'), {
+        data: { ids: selectedIds.value },
+        onSuccess: () => {
+            toast.show(`${selectedIds.value.length} transação(ões) excluída(s).`)
+            selectedIds.value = []
+            showBulkConfirm.value = false
+        },
+        onError: () => toast.show('Erro ao excluir transações.', 'error'),
+    })
+}
+
 const form = useForm({
     id:          null,
     type:        'expense',
     description: '',
     amount:      '',
     date:        new Date().toISOString().split('T')[0],
-    recurrence:  'none',
+    number:      ref(1),
     category_id: '',
     payment_id:  '',
 })
+
+const edit = ref(false)
 
 const { inputRef, numberValue, setValue } = useCurrencyInput({ locale: 'pt-BR', currency: 'BRL', precision: 2 })
 
@@ -39,6 +73,11 @@ const filterCategory = ref(props.filters?.category_id ?? '')
 const filterPayment  = ref(props.filters?.payment_id  ?? '')
 const filterMonth    = ref(props.filters?.month ?? '')
 const filterYear     = ref(props.filters?.year  ?? '')
+const filterDescription = ref(props.filters?.description ?? '')
+
+const enforceMax = () => {
+    form.number = Math.min(12, Math.max(1, form.number));
+};
 
 function applyFilters() {
     router.get(route('transactions.index'), {
@@ -46,6 +85,7 @@ function applyFilters() {
         payment_id:  filterPayment.value  || undefined,
         month:       filterMonth.value    || undefined,
         year:        filterYear.value     || undefined,
+        description: filterDescription.value || undefined,
     }, { preserveState: true })
 }
 
@@ -54,22 +94,31 @@ function clearFilters() {
     filterPayment.value  = ''
     filterMonth.value    = ''
     filterYear.value     = ''
+    filterDescription.value = ''
     router.get(route('transactions.index'))
+}
+
+function editCancel() {
+    form.reset()
+    form.clearErrors()
+    form.type = 'expense'
+    setValue(null)
+    edit.value = false
 }
 
 // ── CRUD ───────────────────────────────────────────────────────────────────────
 const showConfirm   = ref(false)
 const pendingDelete = ref(null)
 
-const editTransaction = (t) => {
+const editTransaction = (transaction) => {
+    edit.value = true
     form.clearErrors()
-    form.id          = t.id
-    form.description = t.description
-    form.date        = t.date
-    form.recurrence  = t.recurrence ?? 'none'
-    form.category_id = t.category_id
-    form.payment_id  = t.payment_id
-    setValue(Number(t.amount))
+    form.id          = transaction.id
+    form.description = transaction.description
+    form.date        = transaction.date
+    form.category_id = transaction.category_id
+    form.payment_id  = transaction.payment_id
+    setValue(Number(transaction.amount))
 }
 
 const saveTransaction = () => {
@@ -108,6 +157,7 @@ const cancelDelete = () => { showConfirm.value = false; pendingDelete.value = nu
 const changePage = (page) => router.get(route('transactions.index'), { ...props.filters, page }, { preserveState: true })
 
 const columns = [
+    { label: '', key: 'select' },
     ...tableSchemas.transactions,
     { label: 'Ações', key: 'actions' },
 ]
@@ -175,15 +225,16 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                             </div>
                         </div>
 
-                        <!-- Recorrência -->
-                        <div class="mt-4 max-w-xs">
-                            <InputLabel value="Recorrência" class="mb-1" />
-                            <select v-model="form.recurrence" :class="inputClass">
-                                <option value="none">Sem recorrência</option>
-                                <option value="weekly">Semanal</option>
-                                <option value="monthly">Mensal</option>
-                                <option value="yearly">Anual</option>
-                            </select>
+                        <!-- Repetição -->
+                        <div class="mt-4" v-if="!edit">
+                            <InputLabel value="Repetir Transacao" class="max-w-xs" />
+                            <input
+                                v-model="form.number"
+                                type="number"
+                                :class="form.errors.number ? inputErrorClass : inputClass + ' max-w-24'"
+                                required
+                                @input="enforceMax"
+                            >
                         </div>
 
                         <div class="flex gap-2 mt-6">
@@ -191,7 +242,7 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                                 {{ form.id ? 'Atualizar' : 'Adicionar' }}
                             </button>
                             <button v-if="form.id" type="button"
-                                @click="form.reset(); form.clearErrors(); form.type = 'expense'; setValue(null)"
+                                @click="editCancel"
                                 class="px-6 py-2 text-white bg-gray-600 rounded-md hover:bg-gray-700 transition"
                             >Cancelar</button>
                         </div>
@@ -200,6 +251,10 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
 
                 <!-- Filtros -->
                 <div class="p-4 bg-gray-900 rounded-lg border border-gray-700 flex flex-wrap gap-3 items-end">
+                    <div>
+                        <InputLabel value="Descrição" class="mb-1" />
+                        <input v-model="filterDescription" type="text" placeholder="Descrição" :class="inputClass + ' text-sm w-24'">
+                    </div>
                     <div>
                         <InputLabel value="Categoria" class="mb-1" />
                         <select v-model="filterCategory" :class="inputClass + ' text-sm'">
@@ -237,6 +292,31 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                     :serverSide="true"
                     @page-change="changePage"
                 >
+                    <template #title>
+                        <div class="flex items-center justify-between mb-4">
+                            <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer select-none">
+                                <input type="checkbox" :checked="isAllSelected" @change="toggleAll" class="w-4 h-4 accent-blue-500" />
+                                Selecionar todos
+                            </label>
+                            <button
+                                v-if="selectedIds.length > 0"
+                                @click="showBulkConfirm = true"
+                                class="px-4 py-1.5 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 transition"
+                            >
+                                Excluir selecionados ({{ selectedIds.length }})
+                            </button>
+                        </div>
+                    </template>
+
+                    <template #select="{ row }">
+                        <input
+                            type="checkbox"
+                            :checked="selectedIds.includes(row.id)"
+                            @change="toggleSelect(row.id)"
+                            class="w-4 h-4 accent-blue-500"
+                        />
+                    </template>
+
                     <template #actions="{ row }">
                         <button @click="editTransaction(row)" class="mr-2 text-blue-400 hover:text-blue-300 transition">Editar</button>
                         <button @click="deleteTransaction(row)" class="text-red-400 hover:text-red-300 transition">Excluir</button>
@@ -252,5 +332,12 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
         message="Tem certeza que deseja excluir esta transação?"
         @confirm="confirmDelete"
         @cancel="cancelDelete"
+    />
+
+    <ConfirmModal
+        :show="showBulkConfirm"
+        :message="`Tem certeza que deseja excluir ${selectedIds.length} transação(ões)?`"
+        @confirm="confirmBulkDelete"
+        @cancel="showBulkConfirm = false"
     />
 </template>

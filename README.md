@@ -156,7 +156,6 @@ Transaction
  ├── belongsTo → Category
  ├── belongsTo → Payment
  ├── type: "income" | "expense"
- └── recurrence: "none" | "weekly" | "monthly" | "yearly"
 ```
 
 ---

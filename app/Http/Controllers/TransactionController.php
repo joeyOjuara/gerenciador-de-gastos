@@ -44,6 +44,10 @@ class TransactionController extends Controller
             $query->whereYear('date', $request->year);
         }
 
+        if ($request->filled('description')) {
+            $query->where('description', 'like', "%{$request->description}%");
+        }
+
         return Inertia::render('Transactions/Index', [
             'transactions' => $query->paginate(20)->withQueryString(),
             'categories'   => $this->categoryRepository->orderBy('name'),
@@ -90,10 +94,16 @@ class TransactionController extends Controller
         try {
             $request->merge([
                 'user_id' => Auth::id(),
-                'next_recurrence_date'  => $this->calcNextDate($request->date, $request->recurrence),
             ]);
 
-            $this->transactionRepository->store($request);
+            for($request->number; $request->number > 0; $request->number--) {
+                $this->transactionRepository->store($request);
+                $request->merge([
+                    'date' => Carbon::parse($request->date)->addMonth()->format('Y-m-d'),
+                ]);
+            }
+
+
             return redirect()->back();
         } catch (\Exception $e) {
             return redirect()->back()->withErrors($e->getMessage());
@@ -103,10 +113,6 @@ class TransactionController extends Controller
     public function update(TransactionRequest $request, $transactionId)
     {
         try {
-            $request->merge([
-                'next_recurrence_date' => $this->calcNextDate($request->date, $request->recurrence),
-            ]);
-
             $transaction = $this->transactionRepository->findById($transactionId);
             $this->transactionRepository->update($transaction, $request);
             return redirect()->back();
@@ -126,16 +132,14 @@ class TransactionController extends Controller
         }
     }
 
-    private function calcNextDate(string $date, ?string $recurrence): ?string
+    public function destroyBulk(Request $request)
     {
-        if (!$recurrence || $recurrence === 'none') return null;
-
-        $actualDay = Carbon::parse($date);
-        return match ($recurrence) {
-            'weekly'  => $actualDay->addWeek()->toDateString(),
-            'monthly' => $actualDay->addMonth()->toDateString(),
-            'yearly'  => $actualDay->addYear()->toDateString(),
-            default   => null,
-        };
+        try {
+            $ids = $request->input('ids', []);
+            Auth::user()->transactions()->whereIn('id', $ids)->delete();
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors($e->getMessage());
+        }
     }
 }

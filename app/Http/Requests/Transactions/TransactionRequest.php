@@ -19,7 +19,6 @@ class TransactionRequest extends FormRequest
             'amount'       => 'required|numeric|min:0.01',
             'date'         => 'required|date',
             'type'         => 'required|in:income,expense',
-            'recurrence'   => 'nullable|in:none,weekly,monthly,yearly',
             'category_id'  => ['required', Rule::exists('categories', 'id')->where('user_id', $this->user()->id)],
             'payment_id'   => ['required', Rule::exists('payments', 'id')->where('user_id', $this->user()->id)],
         ];
