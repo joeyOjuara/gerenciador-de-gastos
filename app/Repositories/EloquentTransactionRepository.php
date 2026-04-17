@@ -6,6 +6,7 @@ use App\Contracts\TransactionRepository;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EloquentTransactionRepository implements TransactionRepository
 {
@@ -26,7 +27,7 @@ class EloquentTransactionRepository implements TransactionRepository
 
     public function findById(int $transactionId): Transaction
     {
-        return Transaction::find($transactionId);
+        return Transaction::where('user_id', Auth::id())->where('id', $transactionId)->firstOrFail();
     }
 
     public function update(Transaction $transaction, Request $request) : void

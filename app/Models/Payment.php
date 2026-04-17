@@ -4,13 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Transaction;
+use App\Models\User;
 
 class Payment extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'user_id'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function transactions()
     {
-        return $this->hasMany(Transaction::class, 'category_id', 'id');
+        return $this->hasMany(Transaction::class, 'payment_id', 'id');
     }
 }

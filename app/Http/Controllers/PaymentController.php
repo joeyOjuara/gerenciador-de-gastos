@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\PaymentRepository;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Http\Requests\Payments\PaymentRequest;
 
@@ -32,6 +33,7 @@ class PaymentController extends Controller
     public function store(PaymentRequest $request)
     {
         try {
+            $request->merge(['user_id' => Auth::id()]);
             $this->paymentRepository->store($request);
             return redirect()->back();
 

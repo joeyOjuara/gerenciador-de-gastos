@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Contracts\CategoryRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Categories\CategoryRequest;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class CategoryController extends Controller
@@ -33,6 +34,7 @@ class CategoryController extends Controller
     public function store(CategoryRequest $request)
     {
         try {
+            $request->merge(['user_id' => Auth::id()]);
             $this->categoryRepository->store($request);
             return redirect()->back();
 

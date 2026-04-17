@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Contracts\CategoryRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -11,7 +12,7 @@ class EloquentCategoryRepository implements CategoryRepository {
 
     public function all() : Collection
     {
-        return Category::all();
+        return Category::where('user_id', Auth::id())->get();
     }
 
     public function store(Request $request) : Category
@@ -26,16 +27,16 @@ class EloquentCategoryRepository implements CategoryRepository {
 
     public function findById(int $categoryId): Category
     {
-        return Category::find($categoryId);
+        return Category::where('user_id', Auth::id())->where('id', $categoryId)->firstOrFail();
     }
 
     public function update(Category $category, Request $request) : void
     {
-        $category->update($request->all());
+        $category->update($request->only(['name']));
     }
 
     public function orderBy(string $coluna): Collection
     {
-        return Category::orderBy($coluna)->get();
+        return Category::where('user_id', Auth::id())->orderBy($coluna)->get();
     }
 }

@@ -30,11 +30,13 @@ class DashboardController extends Controller
             ->whereYear('date', $year)
             ->sum('amount');
 
-        $categories = Category::withSum(['transactions' => function ($q) use ($month, $year) {
-            $q->whereMonth('date', $month)
-              ->whereYear('date', $year)
-              ->where('type', 'expense');
-        }], 'amount')->get();
+        $categories = Category::where('user_id', $user->id)
+            ->withSum(['transactions' => function ($q) use ($month, $year, $user) {
+                $q->where('user_id', $user->id)
+                  ->whereMonth('date', $month)
+                  ->whereYear('date', $year)
+                  ->where('type', 'expense');
+            }], 'amount')->get();
 
         $categoriesData = [
             'labels'   => $categories->pluck('name'),
