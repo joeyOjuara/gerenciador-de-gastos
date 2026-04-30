@@ -175,7 +175,7 @@ const columnsTransactions = tableSchemas.transactions
                 <!-- Últimas Transações -->
                 <DataTable :columns="columnsTransactions" :rows="transactions">
                     <template #title>
-                        <span class="text-gray-50 text-base font-semibold block mb-4">Últimas Transações</span>
+                        <span class="text-gray-50 text-base font-semibold block mb-4">Últimas Saídas</span>
                     </template>
                 </DataTable>
 

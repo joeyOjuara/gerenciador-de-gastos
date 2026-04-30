@@ -11,7 +11,7 @@ const page       = usePage()
 const menu = [
     { name: "Dashboard",           route: "/dashboard",    icon: "🏠" },
     { name: "Entradas",            route: "/incomes",      icon: "📈" },
-    { name: "Transações",          route: "/transactions", icon: "💰" },
+    { name: "Saídas",              route: "/transactions", icon: "💰" },
     { name: "Categorias",          route: "/categories",   icon: "📂" },
     { name: "Formas de Pagamento", route: "/payments",     icon: "💳" },
 ]
