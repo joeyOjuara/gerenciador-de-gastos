@@ -11,7 +11,8 @@ import { formatCurrency } from '@/utils/formatCurrency'
 const props = defineProps({
     categoriesData: { type: Object, required: true },
     monthlyData:    { type: Array,  required: true },
-    transactions:   Array,
+    recentExpenses:   Array,
+    recentIncomes:    Array,
     totalIncome:    { type: Number, required: true, default: 0 },
     totalExpenses:  { type: Number, required: true },
     currentMonth:   { type: Number, required: true },
@@ -172,12 +173,20 @@ const columnsTransactions = tableSchemas.transactions
                     </div>
                 </div>
 
-                <!-- Últimas Transações -->
-                <DataTable :columns="columnsTransactions" :rows="transactions">
-                    <template #title>
-                        <span class="text-gray-50 text-base font-semibold block mb-4">Últimas Saídas</span>
-                    </template>
-                </DataTable>
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <!-- Últimas Transações -->
+                    <DataTable :columns="columnsTransactions" :rows="recentIncomes">
+                        <template #title>
+                            <span class="text-gray-50 text-base font-semibold block mb-4">Últimas Entradas</span>
+                        </template>
+                    </DataTable>
+
+                    <DataTable :columns="columnsTransactions" :rows="recentExpenses">
+                        <template #title>
+                            <span class="text-gray-50 text-base font-semibold block mb-4">Últimas Saídas</span>
+                        </template>
+                    </DataTable>
+                </div>
 
             </div>
         </div>

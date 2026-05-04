@@ -64,8 +64,16 @@ class DashboardController extends Controller
             ];
         }
 
-        $recentTransactions = $user->transactions()
+        $recentExpenses = $user->transactions()
             ->with('category', 'payment')
+            ->where('type', 'expense')
+            ->orderBy('date', 'desc')
+            ->take(5)
+            ->get();
+
+        $recentIncomes = $user->transactions()
+            ->with('category', 'payment')
+            ->where('type', 'income')
             ->orderBy('date', 'desc')
             ->take(5)
             ->get();
@@ -75,7 +83,8 @@ class DashboardController extends Controller
             'totalExpenses'    => $totalExpenses,
             'categoriesData'   => $categoriesData,
             'monthlyData'      => $monthlyData,
-            'transactions'     => $recentTransactions,
+            'recentExpenses'   => $recentExpenses,
+            'recentIncomes'    => $recentIncomes,
             'currentMonth'     => $month,
             'currentYear'      => $year,
         ]);
