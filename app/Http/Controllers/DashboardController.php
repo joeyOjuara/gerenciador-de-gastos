@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Category;
 use Inertia\Inertia;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
+    private const MONTHS_RANGE = 3;
+
     public function index(Request $request)
     {
         /** @var \App\Models\User $user */
@@ -17,6 +20,7 @@ class DashboardController extends Controller
 
         $month = (int) $request->input('month', now()->month);
         $year  = (int) $request->input('year',  now()->year);
+        $baseDate = now()->setDate($year, $month, 1)->startOfMonth();
 
         $totalIncome = (float) $user->transactions()
             ->where('type', 'income')
@@ -46,35 +50,19 @@ class DashboardController extends Controller
             ]],
         ];
 
-        $monthlyData = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $monthlyData[] = [
-                'month'   => $date->translatedFormat('M/y'),
-                'income'  => (float) $user->transactions()
-                    ->where('type', 'income')
-                    ->whereMonth('date', $date->month)
-                    ->whereYear('date', $date->year)
-                    ->sum('amount'),
-                'expense' => (float) $user->transactions()
-                    ->where('type', 'expense')
-                    ->whereMonth('date', $date->month)
-                    ->whereYear('date', $date->year)
-                    ->sum('amount'),
-            ];
-        }
+        $monthlyData = $this->getMonthlyData($user, $baseDate);
 
         $recentExpenses = $user->transactions()
             ->with('category', 'payment')
             ->where('type', 'expense')
-            ->orderBy('date', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->take(5)
             ->get();
 
         $recentIncomes = $user->transactions()
             ->with('category', 'payment')
             ->where('type', 'income')
-            ->orderBy('date', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->take(5)
             ->get();
 
@@ -88,5 +76,34 @@ class DashboardController extends Controller
             'currentMonth'     => $month,
             'currentYear'      => $year,
         ]);
+    }
+
+    private function getMonthlyData(User $user, Carbon $baseDate): array
+    {
+        $startDate = $baseDate->copy()->subMonths(self::MONTHS_RANGE)->startOfMonth();
+        $endDate = $baseDate->copy()->addMonths(self::MONTHS_RANGE)->endOfMonth();
+
+        $transactions = $user->transactions()
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get()
+            ->groupBy(fn ($transaction) => Carbon::parse($transaction->date)->format('Y-m'));
+
+        $monthlyData = [];
+        $current = $startDate->copy();
+
+        while ($current <= $endDate) {
+            $key = $current->format('Y-m');
+            $monthTransactions = $transactions->get($key, collect());
+
+            $monthlyData[] = [
+                'month'   => $current->translatedFormat('M/y'),
+                'income'  => (float) $monthTransactions->where('type', 'income')->sum('amount'),
+                'expense' => (float) $monthTransactions->where('type', 'expense')->sum('amount'),
+            ];
+
+            $current->addMonth();
+        }
+
+        return $monthlyData;
     }
 }

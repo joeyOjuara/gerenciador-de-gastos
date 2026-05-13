@@ -115,10 +115,10 @@ const columnsTransactions = tableSchemas.transactions
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-8">
+                <h3 class="text-lg font-medium text-gray-200">{{ periodLabel }}</h3>
 
                 <!-- Period navigation -->
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-medium text-gray-200">{{ periodLabel }}</h3>
                     <div class="flex gap-2">
                         <button
                             @click="navigate(-1)"
@@ -166,7 +166,7 @@ const columnsTransactions = tableSchemas.transactions
                     </div>
 
                     <div class="p-6 bg-gray-900 border border-gray-700 rounded-lg shadow">
-                        <h3 class="mb-4 text-sm font-medium text-gray-400 uppercase tracking-wide">Evolução dos últimos 6 meses</h3>
+                        <h3 class="mb-4 text-sm font-medium text-gray-400 uppercase tracking-wide">Histórico</h3>
                         <div class="h-64">
                             <LineChart :chartData="lineChartData" :options="lineOptions" />
                         </div>
