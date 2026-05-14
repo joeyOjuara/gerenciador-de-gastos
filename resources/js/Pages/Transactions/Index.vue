@@ -14,6 +14,8 @@ const props = defineProps({
     transactions: Object,   // paginated
     categories:   Array,
     payments:     Array,
+    accounts:     Array,
+    creditCards:  Array,
     filters:      Object,
 })
 
@@ -54,15 +56,22 @@ const confirmBulkDelete = () => {
 const form = useForm({
     id:          null,
     type:        'expense',
+    payment_method: 'bank_account',
     description: '',
     amount:      '',
     date:        new Date().toISOString().split('T')[0],
     number:      ref(1),
     category_id: '',
+    category_name: '',
     payment_id:  '',
+    payment_name: '',
+    account_id:  '',
+    credit_card_id: '',
+    installments_total: 1,
 })
 
 const edit = ref(false)
+const NEW_OPTION_VALUE = '__new__'
 
 const { inputRef, numberValue, setValue } = useCurrencyInput({ locale: 'pt-BR', currency: 'BRL', precision: 2 })
 
@@ -71,9 +80,18 @@ watch(numberValue, (value) => { form.amount = value })
 // ── Filters ────────────────────────────────────────────────────────────────────
 const filterCategory = ref(props.filters?.category_id ?? '')
 const filterPayment  = ref(props.filters?.payment_id  ?? '')
+const filterAccount  = ref(props.filters?.account_id  ?? '')
 const filterMonth    = ref(props.filters?.month ?? '')
 const filterYear     = ref(props.filters?.year  ?? '')
 const filterDescription = ref(props.filters?.description ?? '')
+
+const repeatOrInstallments = computed({
+    get: () => form.payment_method === 'credit_card' ? form.installments_total : form.number,
+    set: (value) => {
+        if (form.payment_method === 'credit_card') form.installments_total = value
+        else form.number = value
+    },
+})
 
 const enforceMax = () => {
     form.number = Math.min(12, Math.max(1, form.number));
@@ -83,6 +101,7 @@ function applyFilters() {
     router.get(route('transactions.index'), {
         category_id: filterCategory.value || undefined,
         payment_id:  filterPayment.value  || undefined,
+        account_id:  filterAccount.value  || undefined,
         month:       filterMonth.value    || undefined,
         year:        filterYear.value     || undefined,
         description: filterDescription.value || undefined,
@@ -92,6 +111,7 @@ function applyFilters() {
 function clearFilters() {
     filterCategory.value = ''
     filterPayment.value  = ''
+    filterAccount.value  = ''
     filterMonth.value    = ''
     filterYear.value     = ''
     filterDescription.value = ''
@@ -102,6 +122,7 @@ function editCancel() {
     form.reset()
     form.clearErrors()
     form.type = 'expense'
+    form.payment_method = 'bank_account'
     setValue(null)
     edit.value = false
 }
@@ -117,7 +138,13 @@ const editTransaction = (transaction) => {
     form.description = transaction.description
     form.date        = transaction.date
     form.category_id = transaction.category_id
+    form.category_name = ''
     form.payment_id  = transaction.payment_id
+    form.payment_name = ''
+    form.account_id  = transaction.account_id
+    form.credit_card_id = transaction.credit_card_id
+    form.payment_method = transaction.payment_method || 'bank_account'
+    form.installments_total = transaction.installments_total || 1
     setValue(Number(transaction.amount))
 }
 
@@ -128,11 +155,14 @@ const saveTransaction = () => {
     if (!form.amount || form.amount <= 0) form.setError('amount', 'Informe um valor maior que zero')
     if (!form.date)                       form.setError('date', 'A data é necessária')
     if (!form.category_id)                form.setError('category_id', 'Selecione uma categoria')
-    if (!form.payment_id)                 form.setError('payment_id', 'Selecione uma forma de pagamento')
+    if (form.category_id === NEW_OPTION_VALUE && !form.category_name.trim()) form.setError('category_name', 'Informe o nome da categoria')
+    if (form.payment_method === 'bank_account' && form.payment_id === NEW_OPTION_VALUE && !form.payment_name.trim()) form.setError('payment_name', 'Informe o nome da forma de pagamento')
+    if (form.payment_method === 'bank_account' && !form.account_id) form.setError('account_id', 'Selecione uma conta')
+    if (form.payment_method === 'credit_card' && !form.credit_card_id) form.setError('credit_card_id', 'Selecione um cartão')
     if (form.hasErrors) return
 
     const opts = {
-        onSuccess: () => { form.reset(); form.id = null; form.type = 'expense'; setValue(null); toast.show('Transação salva com sucesso!') },
+        onSuccess: () => { form.reset(); form.id = null; form.type = 'expense'; form.payment_method = 'bank_account'; setValue(null); toast.show('Transação salva com sucesso!') },
         onError:   () => toast.show('Erro ao salvar transação.', 'error'),
     }
 
@@ -182,7 +212,7 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                     <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-6">Nova Despesa</h3>
                     <form @submit.prevent="saveTransaction">
                         <input type="hidden" v-model="form.type" />
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-6">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-7">
                             <!-- Descrição -->
                             <div class="md:col-span-2">
                                 <InputLabel value="Descrição" class="mb-1" />
@@ -210,26 +240,73 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                                 <select v-model="form.category_id" :class="form.errors.category_id ? inputErrorClass : inputClass" required>
                                     <option value="" disabled>Selecione...</option>
                                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                                    <option :value="NEW_OPTION_VALUE">+ Cadastrar nova categoria</option>
                                 </select>
                                 <InputError :message="form.errors.category_id" class="mt-1" />
+                                <input
+                                    v-if="form.category_id === NEW_OPTION_VALUE"
+                                    v-model="form.category_name"
+                                    type="text"
+                                    placeholder="Nome da nova categoria"
+                                    :class="form.errors.category_name ? inputErrorClass + ' mt-2' : inputClass + ' mt-2'"
+                                    maxlength="40"
+                                    required
+                                >
+                                <InputError :message="form.errors.category_name" class="mt-1" />
                             </div>
 
-                            <!-- Forma de Pagamento -->
                             <div>
+                                <InputLabel value="Lançar em" class="mb-1" />
+                                <select v-model="form.payment_method" :class="inputClass" required>
+                                    <option value="bank_account">Conta Bancária</option>
+                                    <option value="credit_card">Cartão de Crédito</option>
+                                </select>
+                            </div>
+
+                            <div v-if="form.payment_method === 'bank_account'">
+                                <InputLabel value="Conta" class="mb-1" />
+                                <select v-model="form.account_id" :class="form.errors.account_id ? inputErrorClass : inputClass" required>
+                                    <option value="" disabled>Selecione...</option>
+                                    <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
+                                </select>
+                                <InputError :message="form.errors.account_id" class="mt-1" />
+                            </div>
+
+                            <div v-if="form.payment_method === 'credit_card'">
+                                <InputLabel value="Cartão" class="mb-1" />
+                                <select v-model="form.credit_card_id" :class="form.errors.credit_card_id ? inputErrorClass : inputClass" required>
+                                    <option value="" disabled>Selecione...</option>
+                                    <option v-for="card in creditCards" :key="card.id" :value="card.id">{{ card.name }}</option>
+                                </select>
+                                <InputError :message="form.errors.credit_card_id" class="mt-1" />
+                            </div>
+
+                            <div v-if="form.payment_method === 'bank_account'">
                                 <InputLabel value="Pagamento" class="mb-1" />
-                                <select v-model="form.payment_id" :class="form.errors.payment_id ? inputErrorClass : inputClass" required>
+                                <select v-model="form.payment_id" :class="form.errors.payment_id ? inputErrorClass : inputClass">
                                     <option value="" disabled>Selecione...</option>
                                     <option v-for="p in payments" :key="p.id" :value="p.id">{{ p.name }}</option>
+                                    <option :value="NEW_OPTION_VALUE">+ Cadastrar nova forma</option>
                                 </select>
                                 <InputError :message="form.errors.payment_id" class="mt-1" />
+                                <input
+                                    v-if="form.payment_id === NEW_OPTION_VALUE"
+                                    v-model="form.payment_name"
+                                    type="text"
+                                    placeholder="Nome da nova forma"
+                                    :class="form.errors.payment_name ? inputErrorClass + ' mt-2' : inputClass + ' mt-2'"
+                                    maxlength="40"
+                                    required
+                                >
+                                <InputError :message="form.errors.payment_name" class="mt-1" />
                             </div>
                         </div>
 
                         <!-- Repetição -->
                         <div class="mt-4" v-if="!edit">
-                            <InputLabel value="Repetir Transacao" class="max-w-xs" />
+                            <InputLabel :value="form.payment_method === 'credit_card' ? 'Parcelas' : 'Repetir Transação'" class="max-w-xs" />
                             <input
-                                v-model="form.number"
+                                v-model="repeatOrInstallments"
                                 type="number"
                                 :class="form.errors.number ? inputErrorClass : inputClass + ' max-w-24'"
                                 required
@@ -260,6 +337,13 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                         <select v-model="filterCategory" :class="inputClass + ' text-sm'">
                             <option value="">Todas</option>
                             <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <InputLabel value="Conta" class="mb-1" />
+                        <select v-model="filterAccount" :class="inputClass + ' text-sm'">
+                            <option value="">Todas</option>
+                            <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
                         </select>
                     </div>
                     <div>

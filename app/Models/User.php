@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Account;
+use App\Models\CreditCard;
 use App\Models\Transaction;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -56,5 +58,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function transactions()
     {
         return $this->hasMany(Transaction::class, 'user_id', 'id');
+    }
+
+    public function accounts()
+    {
+        return $this->hasMany(Account::class, 'user_id', 'id');
+    }
+
+    public function creditCards()
+    {
+        return $this->hasMany(CreditCard::class, 'user_id', 'id');
     }
 }

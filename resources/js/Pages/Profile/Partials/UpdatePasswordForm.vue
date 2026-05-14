@@ -36,19 +36,18 @@ const updatePassword = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-lg font-medium text-gray-900">
-                Update Password
+            <h2 class="text-lg font-medium text-gray-100">
+                Atualizar Senha
             </h2>
 
-            <p class="mt-1 text-sm text-gray-600">
-                Ensure your account is using a long, random password to stay
-                secure.
+            <p class="mt-1 text-sm text-gray-400">
+                Use uma senha longa e segura para manter sua conta protegida.
             </p>
         </header>
 
         <form @submit.prevent="updatePassword" class="mt-6 space-y-6">
             <div>
-                <InputLabel for="current_password" value="Current Password" />
+                <InputLabel for="current_password" value="Senha Atual" />
 
                 <TextInput
                     id="current_password"
@@ -66,7 +65,7 @@ const updatePassword = () => {
             </div>
 
             <div>
-                <InputLabel for="password" value="New Password" />
+                <InputLabel for="password" value="Nova Senha" />
 
                 <TextInput
                     id="password"
@@ -83,7 +82,7 @@ const updatePassword = () => {
             <div>
                 <InputLabel
                     for="password_confirmation"
-                    value="Confirm Password"
+                    value="Confirmar Senha"
                 />
 
                 <TextInput
@@ -111,9 +110,9 @@ const updatePassword = () => {
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600"
+                        class="text-sm text-green-400"
                     >
-                        Saved.
+                        Salvo.
                     </p>
                 </Transition>
             </div>

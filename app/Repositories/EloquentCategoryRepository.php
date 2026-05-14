@@ -12,7 +12,7 @@ class EloquentCategoryRepository implements CategoryRepository {
 
     public function all() : Collection
     {
-        return Category::where('user_id', Auth::id())->get();
+        return $this->orderBy('name');
     }
 
     public function store(Request $request) : Category

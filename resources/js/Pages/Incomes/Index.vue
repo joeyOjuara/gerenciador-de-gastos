@@ -14,6 +14,7 @@ const props = defineProps({
     transactions: Object,   // paginated
     categories:   Array,
     payments:     Array,
+    accounts:     Array,
     filters:      Object,
 })
 
@@ -54,15 +55,20 @@ const confirmBulkDelete = () => {
 const form = useForm({
     id:          null,
     type:        'income',
+    payment_method: 'bank_account',
     description: '',
     amount:      '',
     date:        new Date().toISOString().split('T')[0],
     number:      ref(1),
     category_id: '',
+    category_name: '',
     payment_id:  '',
+    payment_name: '',
+    account_id:  '',
 })
 
 const edit = ref(false)
+const NEW_OPTION_VALUE = '__new__'
 
 const { inputRef, numberValue, setValue } = useCurrencyInput({ locale: 'pt-BR', currency: 'BRL', precision: 2 })
 
@@ -71,6 +77,7 @@ watch(numberValue, (value) => { form.amount = value })
 // ── Filters ────────────────────────────────────────────────────────────────────
 const filterCategory = ref(props.filters?.category_id ?? '')
 const filterPayment  = ref(props.filters?.payment_id  ?? '')
+const filterAccount  = ref(props.filters?.account_id  ?? '')
 const filterMonth    = ref(props.filters?.month ?? '')
 const filterYear     = ref(props.filters?.year  ?? '')
 const filterDescription = ref(props.filters?.description ?? '')
@@ -83,6 +90,7 @@ function applyFilters() {
     router.get(route('incomes.index'), {
         category_id: filterCategory.value || undefined,
         payment_id:  filterPayment.value  || undefined,
+        account_id:  filterAccount.value  || undefined,
         month:       filterMonth.value    || undefined,
         year:        filterYear.value     || undefined,
         description: filterDescription.value || undefined,
@@ -92,6 +100,7 @@ function applyFilters() {
 function clearFilters() {
     filterCategory.value = ''
     filterPayment.value  = ''
+    filterAccount.value  = ''
     filterMonth.value    = ''
     filterYear.value     = ''
     filterDescription.value = ''
@@ -101,7 +110,8 @@ function clearFilters() {
 function editCancel() {
     form.reset()
     form.clearErrors()
-    form.type = 'expense'
+    form.type = 'income'
+    form.payment_method = 'bank_account'
     setValue(null)
     edit.value = false
 }
@@ -117,7 +127,10 @@ const editTransaction = (transaction) => {
     form.description = transaction.description
     form.date        = transaction.date
     form.category_id = transaction.category_id
+    form.category_name = ''
     form.payment_id  = transaction.payment_id
+    form.payment_name = ''
+    form.account_id  = transaction.account_id
     setValue(Number(transaction.amount))
 }
 
@@ -128,11 +141,14 @@ const saveTransaction = () => {
     if (!form.amount || form.amount <= 0) form.setError('amount', 'Informe um valor maior que zero')
     if (!form.date)                 form.setError('date', 'A data é necessária')
     if (!form.category_id)          form.setError('category_id', 'Selecione uma categoria')
+    if (form.category_id === NEW_OPTION_VALUE && !form.category_name.trim()) form.setError('category_name', 'Informe o nome da categoria')
     if (!form.payment_id)           form.setError('payment_id', 'Selecione uma forma de pagamento')
+    if (form.payment_id === NEW_OPTION_VALUE && !form.payment_name.trim()) form.setError('payment_name', 'Informe o nome da forma de pagamento')
+    if (!form.account_id)           form.setError('account_id', 'Selecione uma conta')
     if (form.hasErrors) return
 
     const opts = {
-        onSuccess: () => { form.reset(); form.id = null; form.type = 'income'; setValue(null); toast.show('Entrada salva com sucesso!') },
+        onSuccess: () => { form.reset(); form.id = null; form.type = 'income'; form.payment_method = 'bank_account'; setValue(null); toast.show('Entrada salva com sucesso!') },
         onError:   () => toast.show('Erro ao salvar entrada.', 'error'),
     }
 
@@ -182,7 +198,8 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                     <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide mb-6">Nova Entrada</h3>
                     <form @submit.prevent="saveTransaction">
                         <input type="hidden" v-model="form.type" />
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-6">
+                        <input type="hidden" v-model="form.payment_method" />
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-7">
                             <!-- Descrição -->
                             <div class="md:col-span-2">
                                 <InputLabel value="Descrição" class="mb-1" />
@@ -210,18 +227,49 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                                 <select v-model="form.category_id" :class="form.errors.category_id ? inputErrorClass : inputClass" required>
                                     <option value="" disabled>Selecione...</option>
                                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                                    <option :value="NEW_OPTION_VALUE">+ Cadastrar nova categoria</option>
                                 </select>
                                 <InputError :message="form.errors.category_id" class="mt-1" />
+                                <input
+                                    v-if="form.category_id === NEW_OPTION_VALUE"
+                                    v-model="form.category_name"
+                                    type="text"
+                                    placeholder="Nome da nova categoria"
+                                    :class="form.errors.category_name ? inputErrorClass + ' mt-2' : inputClass + ' mt-2'"
+                                    maxlength="40"
+                                    required
+                                >
+                                <InputError :message="form.errors.category_name" class="mt-1" />
                             </div>
 
                             <!-- Forma de Pagamento -->
                             <div>
-                                <InputLabel value="Conta / Origem" class="mb-1" />
+                                <InputLabel value="Conta" class="mb-1" />
+                                <select v-model="form.account_id" :class="form.errors.account_id ? inputErrorClass : inputClass" required>
+                                    <option value="" disabled>Selecione...</option>
+                                    <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
+                                </select>
+                                <InputError :message="form.errors.account_id" class="mt-1" />
+                            </div>
+
+                            <div>
+                                <InputLabel value="Forma de Pagamento" class="mb-1" />
                                 <select v-model="form.payment_id" :class="form.errors.payment_id ? inputErrorClass : inputClass" required>
                                     <option value="" disabled>Selecione...</option>
                                     <option v-for="p in payments" :key="p.id" :value="p.id">{{ p.name }}</option>
+                                    <option :value="NEW_OPTION_VALUE">+ Cadastrar nova forma</option>
                                 </select>
                                 <InputError :message="form.errors.payment_id" class="mt-1" />
+                                <input
+                                    v-if="form.payment_id === NEW_OPTION_VALUE"
+                                    v-model="form.payment_name"
+                                    type="text"
+                                    placeholder="Nome da nova forma"
+                                    :class="form.errors.payment_name ? inputErrorClass + ' mt-2' : inputClass + ' mt-2'"
+                                    maxlength="40"
+                                    required
+                                >
+                                <InputError :message="form.errors.payment_name" class="mt-1" />
                             </div>
                         </div>
 
@@ -263,7 +311,14 @@ const inputErrorClass = 'w-full p-2 bg-gray-800 border border-red-500 text-gray-
                         </select>
                     </div>
                     <div>
-                        <InputLabel value="Conta / Origem" class="mb-1" />
+                        <InputLabel value="Conta" class="mb-1" />
+                        <select v-model="filterAccount" :class="inputClass + ' text-sm'">
+                            <option value="">Todas</option>
+                            <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <InputLabel value="Forma de Pagamento" class="mb-1" />
                         <select v-model="filterPayment" :class="inputClass + ' text-sm'">
                             <option value="">Todas</option>
                             <option v-for="p in payments" :key="p.id" :value="p.id">{{ p.name }}</option>

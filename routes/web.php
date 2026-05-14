@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CreditCardController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
@@ -31,6 +33,22 @@ Route::middleware(['auth', 'verified'])->prefix('payments')->group(function () {
     Route::post('/store', [PaymentController::class, 'store'])->name('payments.store');
     Route::delete('/delete/{id}', [PaymentController::class, 'destroy'])->name('payments.destroy');
     Route::put('/update/{id}', [PaymentController::class, 'update'])->name('payments.update');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('accounts')->group(function () {
+    Route::get('/', [AccountController::class, 'index'])->name('accounts.index');
+    Route::post('/store', [AccountController::class, 'store'])->name('accounts.store');
+    Route::post('/transfer', [AccountController::class, 'transfer'])->name('accounts.transfer');
+    Route::delete('/delete/{id}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+    Route::put('/update/{id}', [AccountController::class, 'update'])->name('accounts.update');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('credit-cards')->group(function () {
+    Route::get('/', [CreditCardController::class, 'index'])->name('credit-cards.index');
+    Route::post('/store', [CreditCardController::class, 'store'])->name('credit-cards.store');
+    Route::delete('/delete/{id}', [CreditCardController::class, 'destroy'])->name('credit-cards.destroy');
+    Route::put('/update/{id}', [CreditCardController::class, 'update'])->name('credit-cards.update');
+    Route::post('/invoices/{invoiceId}/pay', [CreditCardController::class, 'payInvoice'])->name('credit-card-invoices.pay');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('transactions')->group(function () {

@@ -12,8 +12,10 @@ const menu = [
     { name: "Dashboard",           route: "/dashboard",    icon: "🏠" },
     { name: "Entradas",            route: "/incomes",      icon: "📈" },
     { name: "Saídas",              route: "/transactions", icon: "💰" },
+    { name: "Contas",              route: "/accounts",     icon: "🏦" },
+    { name: "Cartões",             route: "/credit-cards", icon: "💳" },
     { name: "Categorias",          route: "/categories",   icon: "📂" },
-    { name: "Formas de Pagamento", route: "/payments",     icon: "💳" },
+    { name: "Formas de Pagamento", route: "/payments",     icon: "�" },
 ]
 
 const isActive = (route) => page.url.startsWith(route)

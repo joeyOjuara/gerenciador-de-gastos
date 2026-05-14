@@ -15,6 +15,12 @@ const props = defineProps({
     recentIncomes:    Array,
     totalIncome:    { type: Number, required: true, default: 0 },
     totalExpenses:  { type: Number, required: true },
+    realBalance:    { type: Number, required: true, default: 0 },
+    projectedBalance: { type: Number, required: true, default: 0 },
+    unpaidInvoicesTotal: { type: Number, required: true, default: 0 },
+    accounts:       { type: Array,  required: true, default: () => [] },
+    creditCards:    { type: Array,  required: true, default: () => [] },
+    selectedAccountId: { type: Number, default: null },
     currentMonth:   { type: Number, required: true },
     currentYear:    { type: Number, required: true },
 })
@@ -28,8 +34,20 @@ function navigate(delta) {
     let year = props.currentYear
     if (month < 1)  { month = 12; year-- }
     if (month > 12) { month = 1;  year++ }
-    router.get('/dashboard', (!delta ? {} : { month: month, year: year }), { preserveState: false })
+    const account_id = selectedAccount.value || undefined
+    router.get('/dashboard', (!delta ? { account_id } : { month: month, year: year, account_id }), { preserveState: false })
 }
+
+const selectedAccount = computed({
+    get: () => props.selectedAccountId ?? '',
+    set: (accountId) => {
+        router.get('/dashboard', {
+            month: props.currentMonth,
+            year: props.currentYear,
+            account_id: accountId || undefined,
+        }, { preserveState: false })
+    },
+})
 
 // ── Bar chart ──────────────────────────────────────────────────────────────────
 const CHART_COLORS = [
@@ -42,8 +60,8 @@ const coloredChartData = computed(() => {
     if (!props.categoriesData?.datasets) return props.categoriesData
     return {
         ...props.categoriesData,
-        datasets: props.categoriesData.datasets.map(ds => ({
-            ...ds,
+        datasets: props.categoriesData.datasets.map(dataset => ({
+            ...dataset,
             backgroundColor: props.categoriesData.labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
             borderRadius: 4,
             borderSkipped: false,
@@ -89,6 +107,21 @@ const lineChartData = computed(() => ({
     ],
 }))
 
+const lineChartSaldo = computed(() => ({
+    labels: props.monthlyData.map(d => d.month),
+    datasets: [
+        {
+            label: 'Saldo',
+            data: props.monthlyData.map(d => d.income - d.expense),
+            borderColor: 'rgb(96,165,250)',
+            backgroundColor: 'rgba(96,165,250,.12)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: 'rgb(96,165,250)',
+        },
+    ],
+}))
+
 const lineOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -118,7 +151,7 @@ const columnsTransactions = tableSchemas.transactions
                 <h3 class="text-lg font-medium text-gray-200">{{ periodLabel }}</h3>
 
                 <!-- Period navigation -->
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div class="flex gap-2">
                         <button
                             @click="navigate(-1)"
@@ -133,10 +166,23 @@ const columnsTransactions = tableSchemas.transactions
                             class="px-3 py-1 text-sm bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-700 transition"
                         >Próximo →</button>
                     </div>
+
+                    <div class="w-full md:w-72">
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Conta</label>
+                        <select
+                            v-model="selectedAccount"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Todas as Contas</option>
+                            <option v-for="account in accounts" :key="account.id" :value="account.id">
+                                {{ account.name }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Summary Cards -->
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-5">
                     <div class="p-6 bg-green-900/30 border border-green-800 rounded-lg shadow">
                         <div class="text-sm font-medium text-green-400 mb-1">Receitas</div>
                         <div class="text-2xl font-bold text-green-300">{{ formatCurrency(totalIncome) }}</div>
@@ -146,8 +192,52 @@ const columnsTransactions = tableSchemas.transactions
                         <div class="text-2xl font-bold text-red-300">{{ formatCurrency(totalExpenses) }}</div>
                     </div>
                     <div class="p-6 bg-blue-900/30 border border-blue-800 rounded-lg shadow">
-                        <div class="text-sm font-medium text-blue-400 mb-1">Saldo</div>
+                        <div class="text-sm font-medium text-blue-400 mb-1">Saldo do Período</div>
                         <div class="text-2xl font-bold text-blue-300">{{ formatCurrency(totalIncome - totalExpenses) }}</div>
+                    </div>
+                    <div class="p-6 bg-indigo-900/30 border border-indigo-800 rounded-lg shadow">
+                        <div class="text-sm font-medium text-indigo-400 mb-1">Saldo Real</div>
+                        <div class="text-2xl font-bold text-indigo-300">{{ formatCurrency(realBalance) }}</div>
+                    </div>
+                    <div class="p-6 bg-purple-900/30 border border-purple-800 rounded-lg shadow">
+                        <div class="text-sm font-medium text-purple-400 mb-1">Saldo Projetado</div>
+                        <div class="text-2xl font-bold text-purple-300">{{ formatCurrency(projectedBalance) }}</div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-gray-900 border border-gray-700 rounded-lg shadow">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Cartões e Faturas em Aberto</h3>
+                        <span class="text-sm text-gray-400">Faturas em aberto: {{ formatCurrency(unpaidInvoicesTotal) }}</span>
+                    </div>
+                    <div v-if="creditCards.length" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        <div v-for="card in creditCards" :key="card.id" class="p-4 bg-gray-800 border border-gray-700 rounded-lg">
+                            <div class="flex justify-between gap-3">
+                                <div>
+                                    <h4 class="font-semibold text-gray-100">{{ card.name }}</h4>
+                                    <p class="text-xs text-gray-400">Fecha dia {{ card.closing_day }} · Vence dia {{ card.due_day }}</p>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div class="text-gray-400">Disponível</div>
+                                    <div class="font-semibold text-green-300">{{ formatCurrency(card.available_limit || 0) }}</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <div v-for="invoice in card.invoices" :key="invoice.id" class="flex justify-between text-sm text-gray-300">
+                                    <span>{{ String(invoice.reference_month).padStart(2, '0') }}/{{ invoice.reference_year }}</span>
+                                    <span>{{ formatCurrency(invoice.transactions_sum_amount || 0) }}</span>
+                                </div>
+                                <p v-if="!card.invoices?.length" class="text-sm text-gray-500">Sem faturas abertas.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p v-else class="text-sm text-gray-500">Nenhum cartão cadastrado.</p>
+                </div>
+
+                <!-- Chart Saldo -->
+                <div class="p-6 bg-gray-900 border border-gray-700 rounded-lg shadow">
+                    <div class="h-32">
+                        <LineChart :chartData="lineChartSaldo" :options="lineOptions" />
                     </div>
                 </div>
 

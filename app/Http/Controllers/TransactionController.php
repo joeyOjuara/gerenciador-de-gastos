@@ -25,8 +25,9 @@ class TransactionController extends Controller
         $user = Auth::user();
         $query = $user->transactions()
             ->where('type', 'expense')
-            ->with('category', 'payment')
-            ->orderBy('date', 'desc');
+            ->where('is_invoice_payment', false)
+            ->with('category', 'payment', 'account', 'creditCard', 'invoice')
+            ->orderBy('updated_at', 'desc');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -34,6 +35,10 @@ class TransactionController extends Controller
 
         if ($request->filled('payment_id')) {
             $query->where('payment_id', $request->payment_id);
+        }
+
+        if ($request->filled('account_id')) {
+            $query->where('account_id', $request->account_id);
         }
 
         if ($request->filled('month')) {
@@ -52,7 +57,9 @@ class TransactionController extends Controller
             'transactions' => $query->paginate(20)->withQueryString(),
             'categories'   => $this->categoryRepository->orderBy('name'),
             'payments'     => $this->paymentRepository->orderBy('name'),
-            'filters'      => $request->only(['category_id', 'payment_id', 'month', 'year']),
+            'accounts'     => $user->accounts()->orderBy('name')->get(),
+            'creditCards'  => $user->creditCards()->orderBy('name')->get(),
+            'filters'      => $request->only(['category_id', 'payment_id', 'account_id', 'month', 'year', 'description']),
         ]);
     }
 
@@ -62,8 +69,8 @@ class TransactionController extends Controller
         $user = Auth::user();
         $query = $user->transactions()
             ->where('type', 'income')
-            ->with('category', 'payment')
-            ->orderBy('date', 'desc');
+            ->with('category', 'payment', 'account')
+            ->orderBy('updated_at', 'desc');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -71,6 +78,10 @@ class TransactionController extends Controller
 
         if ($request->filled('payment_id')) {
             $query->where('payment_id', $request->payment_id);
+        }
+
+        if ($request->filled('account_id')) {
+            $query->where('account_id', $request->account_id);
         }
 
         if ($request->filled('month')) {
@@ -81,11 +92,17 @@ class TransactionController extends Controller
             $query->whereYear('date', $request->year);
         }
 
+        if ($request->filled('description')) {
+            $query->where('description', 'like', "%{$request->description}%");
+        }
+
         return Inertia::render('Incomes/Index', [
             'transactions' => $query->paginate(20)->withQueryString(),
             'categories'   => $this->categoryRepository->orderBy('name'),
             'payments'     => $this->paymentRepository->orderBy('name'),
-            'filters'      => $request->only(['category_id', 'payment_id', 'month', 'year']),
+            'accounts'     => $user->accounts()->orderBy('name')->get(),
+            'creditCards'  => $user->creditCards()->orderBy('name')->get(),
+            'filters'      => $request->only(['category_id', 'payment_id', 'account_id', 'month', 'year', 'description']),
         ]);
     }
 
@@ -96,7 +113,9 @@ class TransactionController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
-            for($request->number; $request->number > 0; $request->number--) {
+            $repetitions = $request->payment_method === 'credit_card' ? 1 : (int) $request->number;
+
+            for (; $repetitions > 0; $repetitions--) {
                 $this->transactionRepository->store($request);
                 $request->merge([
                     'date' => Carbon::parse($request->date)->addMonth()->format('Y-m-d'),
@@ -136,7 +155,7 @@ class TransactionController extends Controller
     {
         try {
             $ids = $request->input('ids', []);
-            Auth::user()->transactions()->whereIn('id', $ids)->delete();
+            $this->transactionRepository->deleteMany($ids);
             return redirect()->back();
         } catch (\Exception $e) {
             return redirect()->back()->withErrors($e->getMessage());

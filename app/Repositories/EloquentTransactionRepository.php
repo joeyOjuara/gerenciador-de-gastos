@@ -4,25 +4,28 @@ namespace App\Repositories;
 
 use App\Contracts\TransactionRepository;
 use App\Models\Transaction;
+use App\Services\TransactionService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EloquentTransactionRepository implements TransactionRepository
 {
-    public function all() : Collection
+    public function __construct(private readonly TransactionService $transactionService) {}
+
+    public function all(): Collection
     {
-        return Transaction::with('category')->all();
+        return Transaction::with('category', 'payment', 'account', 'creditCard', 'invoice')->get();
     }
 
-    public function store(Request $request) : Transaction
+    public function store(Request $request): Transaction
     {
-        return Transaction::create($request->all());
+        return $this->transactionService->create($request);
     }
 
-    public function delete(Transaction $transaction) : void
+    public function delete(Transaction $transaction): void
     {
-        $transaction->delete();
+        $this->transactionService->delete($transaction);
     }
 
     public function findById(int $transactionId): Transaction
@@ -30,9 +33,16 @@ class EloquentTransactionRepository implements TransactionRepository
         return Transaction::where('user_id', Auth::id())->where('id', $transactionId)->firstOrFail();
     }
 
-    public function update(Transaction $transaction, Request $request) : void
+    public function update(Transaction $transaction, Request $request): void
     {
-        $transaction->update($request->all());
+        $this->transactionService->update($transaction, $request);
     }
 
+    public function deleteMany(array $transactionIds): void
+    {
+        Transaction::where('user_id', Auth::id())
+            ->whereIn('id', $transactionIds)
+            ->get()
+            ->each(fn(Transaction $transaction) => $this->delete($transaction));
+    }
 }

@@ -12,7 +12,7 @@ class EloquentPaymentRepository implements PaymentRepository
 {
     public function all() : Collection
     {
-        return Payment::where('user_id', Auth::id())->get();
+        return $this->orderBy('name');
     }
 
     public function store(Request $request) : Payment
